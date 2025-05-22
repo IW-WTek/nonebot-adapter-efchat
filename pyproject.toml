@@ -1,0 +1,34 @@
+[project]
+name = "nonebot-adapter-efchat"
+version = "0.0.3"
+description = "A NoneBot adapter for EFChat and similar chatrooms"
+authors = [
+{name = "molanp", email = "molanpp@outlook.com"},
+]
+license = "MIT"
+readme = "README.md"
+keywords = ["bot", "efchat"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Framework :: Robot Framework",
+  "Framework :: Robot Framework :: Library",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "nonebot2>=2.2.0",
+    "typing-extensions>=4.0.0,<5.0.0",
+    "pydantic>=1.10.0,<3.0.0,!=2.5.0,!=2.5.1"
+]
+
+[project.urls]
+Homepage = "https://github.com/molanp/nonebot_adapter_efchat"
+Repository = "https://github.com/molanp/nonebot_adapter_efchat"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["nonebot"]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
