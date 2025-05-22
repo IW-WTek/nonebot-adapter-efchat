@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Extra
+import nonebot
 
 class Config(BaseModel):
    
@@ -15,5 +16,9 @@ class Config(BaseModel):
 
 class PluginConfig(BaseModel, extra=Extra.ignore):
     nickname: list[str] = ["Bot", "bot"]
+
+plugin_config: PluginConfig = PluginConfig.parse_obj(
+    nonebot.get_driver().config.dict(exclude_unset=True)
+)
 
 nickname_list = plugin_config.nickname
