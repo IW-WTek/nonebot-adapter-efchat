@@ -137,7 +137,7 @@ await bot.get_chat_history(num=50)
 在 `plugins/echo.py` 中创建一个简单的回显插件：
 ```python
 from nonebot import on_message
-from nonebot.adapters.EFCHAT import MessageEvent
+from nonebot.adapters.efchat import MessageEvent
 
 echo = on_message()
 
