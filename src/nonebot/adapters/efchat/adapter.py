@@ -92,7 +92,7 @@ class Adapter(BaseAdapter):
                 await asyncio.sleep(5)
 
     async def _handle_data(self, data):
-    """处理事件"""
+        """处理事件"""
         try:
             event_cls = EVENT_MAP.get(data["cmd"])
             if event_cls:
