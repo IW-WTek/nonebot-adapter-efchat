@@ -41,10 +41,12 @@ class MessageSegment(BaseMessageSegment["Message"]):
 
     @classmethod
     def text(cls, content: str) -> "MessageSegment":
+        """支持全部markdown语法，html标签会被原样输出"""
         return cls("text", {"text":content})
 
     @classmethod
     def image(cls, url: str) -> "MessageSegment":
+        """暂时仅支持网络图片url，base64计划中"""
         return cls("image", {"url": url})
 
     @classmethod
