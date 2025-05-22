@@ -1,4 +1,15 @@
-# EFChat Adapter
+<p align="center">
+  <a href="https://nonebot.dev/"><img src="https://nonebot.dev/logo.png" width="200" height="200" alt="nonebot"></a>
+</p>
+
+<div align="center">
+
+# NoneBot-Adapter-EFChat
+
+_✨ NoneBot2 EFChat 协议适配 / EFChat Protocol Adapter for NoneBot2 ✨_
+
+</div>
+## EFChat适配器简述
 
 EFChat Adapter 是一个适用于 **EFChat聊天室** 的 **NoneBot 适配器**，可以轻松地在 EFChat 聊天室中开发机器人，并使用 NoneBot 生态来构建聊天机器人。
 
