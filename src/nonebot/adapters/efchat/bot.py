@@ -4,7 +4,6 @@ from nonebot.adapters import Bot as BaseBot
 from nonebot.message import handle_event
 from .event import Event, ChannelMessageEvent, WhisperMessageEvent, MessageEvent
 from .message import Message, MessageSegment
-from .config import nickname_list
 from nonebot import logger
 
 if TYPE_CHECKING:
@@ -38,7 +37,7 @@ class Bot(BaseBot):
             await self.send_chat_message(event, message, **kwargs)
 
     async def send_chat_message(self, event: ChannelMessageEvent, message: Union[str, Message, MessageSegment], show: bool = True, at_sender: bool = False, reply_message: bool = False):
-        """发送频道消息，并格式化 @用户 和 回复原消息"""
+        """发送房间消息，并格式化 @用户 和 回复原消息"""
         formatted_message = _format_send_message(event, message, at_sender, reply_message)
         await self.call_api("chat", text=str(formatted_message), show=("1" if show else "0"), head=self.adapter.head)
 
@@ -48,7 +47,7 @@ class Bot(BaseBot):
         await self.call_api("whisper", nick=event.nick, text=str(formatted_message))
 
     async def move(self, new_channel: str):
-        """移动到指定频道"""
+        """移动到指定房间"""
         await self.call_api("move", channel=new_channel)
         self.adapter.channel = new_channel
 
@@ -114,7 +113,7 @@ def _check_nickname(bot: "Bot", event: MessageEvent) -> None:
     if first_msg_seg.type != "text":
         return
 
-    nicknames = {re.escape(n) for n in nickname_list}
+    nicknames = {re.escape(n) for n in bot.adapter.adapter_config.nickname}
     if not nicknames:
         return
 

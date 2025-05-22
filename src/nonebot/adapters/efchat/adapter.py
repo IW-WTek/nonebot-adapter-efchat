@@ -100,7 +100,7 @@ class Adapter(BaseAdapter):
     
                 bot = Bot(self, self.self_id)
     
-                # 过滤自身消息（私聊和频道消息）
+                # 过滤自身消息（私聊和房间消息）
                 if not (
                     isinstance(event, (ChannelMessageEvent, WhisperMessageEvent))
                     and self.adapter_config.efchat_ignore_self

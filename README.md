@@ -13,7 +13,7 @@ EFChat Adapter 是一个适用于 **EFChat聊天室** 的 **NoneBot 适配器**�
 
 ## 🚀 特性
 - 🔌 **NoneBot 适配**，可直接集成到 NoneBot 插件系统，实现灵活的机器人开发
-- 📡 **自动处理 EFChat 事件**，支持频道消息、私聊、系统通知等
+- 📡 **自动处理 EFChat 事件**，支持房间消息、私聊、系统通知等
 
 ---
 
@@ -81,12 +81,12 @@ await bot.send(event, message="你好！", at_sender=True, reply_message=False)
 ---
 
 ### `send_chat_message()`
-发送消息到 **当前频道**：
+发送消息到 **当前房间**：
 ```python
 await bot.send_chat_message(event, message="Hello!", show=True, at_sender=False, reply_message=False)
 ```
 > **参数说明**：
-> - `event`: 频道消息事件
+> - `event`: 房间消息事件
 > - `message`: 要发送的内容（`str` 或 `Message`）
 > - `show`: 是否在聊天记录中显示 (`True` 显示，`False` 隐藏)
 > - `at_sender`: 是否 @ 发送者
@@ -108,7 +108,7 @@ await bot.send_whisper_message(event, message="Hello EFChat!", at_sender=False, 
 ---
 
 ### `move()`
-移动 Bot 到指定频道：
+移动 Bot 到指定房间：
 ```python
 await bot.move("PrivateRoom")
 ```

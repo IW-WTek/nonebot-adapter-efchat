@@ -220,7 +220,7 @@ class InviteEvent(RequestEvent):
     nick: str = ""
     """邀请人"""
     to: str
-    """邀请到的频道"""
+    """邀请到的房间"""
     
     def __init__(self, **data):
         super().__init__(**data)
