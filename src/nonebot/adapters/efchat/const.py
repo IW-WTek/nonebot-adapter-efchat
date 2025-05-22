@@ -11,6 +11,7 @@ EVENT_MAP = {
     "chat": ChannelMessageEvent,
     "info": SystemEvent,
     "shout": ShoutEvent,
+    "warn": SystemEvent,
     "cap": SystemEvent,
     "onlineSet": OnlineSetEvent,
     "html": HTMLMessageEvent,

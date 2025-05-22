@@ -10,6 +10,7 @@ from nonebot.drivers import Request, WebSocketClientMixin, Driver
 from .config import Config
 from .bot import Bot
 from .const import EVENT_MAP
+from .event import WhisperMessageEvent, ChannelMessageEvent
 
 async def heartbeat(adapter):
     """发送心跳包"""
