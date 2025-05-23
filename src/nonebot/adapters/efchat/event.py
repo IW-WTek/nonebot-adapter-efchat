@@ -9,6 +9,10 @@ from .models import ChatHistory, OnlineUser
 class Event(BaseEvent):
     """通用事件"""
     
+    self_id: str
+    """机器人自身 ID"""
+    channel: str
+    """房间名称"""
     time: int
     """时间"""
     
@@ -47,8 +51,6 @@ class MessageEvent(Event):
     """是否机器人"""
     nick: str = ""
     """发送者昵称"""
-    self_id: str
-    """机器人自身 ID"""
     trip: str = ""
     """加密身份标识"""
     to_me: bool = False
@@ -90,8 +92,6 @@ class ChannelMessageEvent(MessageEvent):
     """房间消息事件"""
 
     message_type: Literal["channel"] = "channel"
-    channel: str
-    """房间名称"""
     head: str
     """用户头像链接"""
     level: int
@@ -119,14 +119,10 @@ class HTMLMessageEvent(MessageEvent):
     """HTML消息事件"""
 
     message_type: Literal["html"] = "html"
-    nick: str
-    """发布者用户名"""
     mod: bool = False
     """来自插件"""
     admin: bool = False
     """来自管理员"""
-    channel: str
-    """房间名称"""
 
     def get_event_description(self) -> str:
         return sanitize(f"Received HTML Message from {self.nick}: {self.message}")
@@ -165,8 +161,6 @@ class RequestEvent(Event):
     post_type: Literal["request"] = "request"
     type: str = ""
     """具体子事件"""
-    channel: str
-    """房间名称"""
     text: str
     """事件内容"""
     
@@ -198,8 +192,6 @@ class SystemEvent(NoticeEvent):
 
     event: str = "info"
     """通知具体事件"""
-    channel: str
-    """房间名称"""
     text: str
     """事件内容"""
     
@@ -230,8 +222,6 @@ class InviteEvent(RequestEvent):
 class JoinRoomEvent(NoticeEvent):
     """加入房间事件"""
 
-    channel: str
-    """房间名称"""
     city: str
     """地理位置"""
     client: str

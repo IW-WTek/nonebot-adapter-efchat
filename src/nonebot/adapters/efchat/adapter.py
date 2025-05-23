@@ -50,7 +50,7 @@ class Adapter(BaseAdapter):
         self.task = asyncio.create_task(self._forward_ws())
 
     async def _call_api(self, api: str, **kwargs):
-        await self.adapter.send_packet({"cmd": api, **kwargs})
+        await self.send_packet({"cmd": api, **kwargs})
 
     async def _forward_ws(self):
         """WebSocket 连接维护"""
@@ -95,9 +95,11 @@ class Adapter(BaseAdapter):
     async def _handle_data(self, data):
         """处理事件"""
         try:
+            if data.get("channel") is None:
+                data["channel"] = self.channel
             event_cls = EVENT_MAP.get(data["cmd"])
             if event_cls:
-                event = event_cls(**data, self_id=self.self_id, channel=self.channel)
+                event = event_cls(**data, self_id=self.self_id)
     
                 bot = Bot(self, self.self_id)
     
