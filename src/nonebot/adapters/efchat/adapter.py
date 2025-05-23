@@ -19,8 +19,7 @@ class Adapter(BaseAdapter):
         super().__init__(driver, **kwargs)
         self.cfg: Config = get_plugin_config(Config)
         self.bots: Dict[str, Bot] = {}  # 使用 "nick@channel" 作为 key 存放 Bot 实例
-        self._bot_tasks = []
-        """Bot任务列表"""
+        self._bot_tasks = []  # Bot任务列表
         self.setup()
 
     @classmethod
@@ -62,11 +61,13 @@ class Adapter(BaseAdapter):
 
     async def rename_bot(self, old_key: str, new_key: str):
         """在 self.bots 中把键从 old_key 改为 new_key"""
+        if new_key in self.bots:
+            raise ValueError(f"Cannot rename: new_key '{new_key}' already exists in self.bots.")
         try:
             self.bots[new_key] = self.bots.pop(old_key)
-        except KeyError:
+        except KeyError as e:
 
-            raise RuntimeError(f"rename_bot failed: {old_key!r} not found")
+            raise RuntimeError(f"rename_bot failed: {old_key!r} not found") from e
 
     async def _heartbeat(self, bot: Bot):
         """心跳包维护，防止 WebSocket 断连"""
@@ -126,7 +127,7 @@ class Adapter(BaseAdapter):
             captcha_callback = lambda url: asyncio.get_event_loop().run_in_executor(
                 None, input, f"请输入验证码（{url}）: "
                 )
-        captcha = ""
+        captcha = None
         if captcha_callback:
             try:
                 captcha = await asyncio.wait_for(captcha_callback(captcha_url), timeout=timeout)
@@ -134,7 +135,8 @@ class Adapter(BaseAdapter):
                 logger.error("验证码输入超时，跳过本次验证码处理")
         else:
             logger.warning("未提供 captcha_callback，跳过验证码输入")
-        await bot.send_packet({"cmd": "chat", "text": captcha})
+        if captcha:
+            await bot.send_packet({"cmd": "chat", "text": captcha})
 
     async def _call_api(self, bot: Bot, api: str, **kwargs):
         """调用 API 方法"""
