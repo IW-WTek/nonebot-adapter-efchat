@@ -67,7 +67,7 @@ EFCHAT_IGNORE_SELF=True
 * 配置项`password`和`token`只需要存在一个，如果都存在则只会使用`password`
 * `token`的作用只是用来跳过登陆验证码
 
-- `nick`是bot账号，同时也是在聊天室里显示的n昵称
+- `nick`是bot账号，同时也是在聊天室里显示的昵称
 - `channel`是Bot活跃的房间名称
 - `head`是Bot的头像url地址
 - `password`和`token`同时只能存在一个，都填写则使用密码登陆

@@ -5,6 +5,7 @@ from nonebot.message import handle_event
 from .event import Event, ChannelMessageEvent, WhisperMessageEvent, MessageEvent
 from .message import Message, MessageSegment
 from nonebot import logger
+from .models import EFChatBotConfig
 
 if TYPE_CHECKING:
     from .adapter import Adapter
@@ -25,13 +26,18 @@ def _format_send_message(event: MessageEvent, message: Union[str, Message, Messa
 
 
 class Bot(BaseBot):
-    def __init__(self, adapter: "Adapter", bot_config):
+    def __init__(self, adapter: "Adapter", bot_config: "EFChatBotConfig"):
         """初始化 Bot，构造唯一 self_id 为 "nick@channel" """
         super().__init__(adapter, f"{bot_config.nick}@{bot_config.channel}")
         self.adapter: Adapter = adapter
         self.nick = bot_config.nick
         self.channel = bot_config.channel
         self.head = bot_config.head
+
+    @property
+    def key(self) -> str:
+        return f"{self.nick}@{self.channel}"
+
 
     async def send(self, event: MessageEvent, message: Union[str, Message, MessageSegment], **kwargs):
         """选择 whisper 或 chat"""
@@ -52,20 +58,26 @@ class Bot(BaseBot):
 
     async def move(self, new_channel: str):
         """移动到指定房间"""
+        old_key = self.key
         await self.call_api("move", channel=new_channel)
         self.channel = new_channel
+        new_key = self.key
+        await self.adapter.rename_bot(old_key, new_key)
 
     async def change_nick(self, new_nick: str):
         """修改机器人名称"""
+        old_key = self.key
         await self.call_api("changenick", nick=new_nick)
         self.nick = new_nick
+        new_key = self.key
+        await self.adapter.rename_bot(old_key, new_key)
 
     async def get_chat_history(self, num: int):
         """获取历史聊天记录"""
-        return await self.call_api("get_old", num=num)
+        await self.call_api("get_old", num=num)
 
     async def call_api(self, api: str, **kwargs):
-        return await self.adapter._call_api(self, api, **kwargs)
+        await self.adapter._call_api(self, api, **kwargs)
 
     async def handle_event(self, event: Event) -> None:
         """处理收到的事件"""

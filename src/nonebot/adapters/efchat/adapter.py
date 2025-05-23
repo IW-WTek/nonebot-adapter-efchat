@@ -1,7 +1,7 @@
 import json
 import asyncio
 import re
-from typing import Dict, Optional
+from typing import Dict, Optional, Callable, Awaitable
 from nonebot import get_plugin_config, logger
 from nonebot.adapters import Adapter as BaseAdapter
 from nonebot.exception import WebSocketClosed
@@ -19,6 +19,8 @@ class Adapter(BaseAdapter):
         super().__init__(driver, **kwargs)
         self.cfg: Config = get_plugin_config(Config)
         self.bots: Dict[str, Bot] = {}  # 使用 "nick@channel" 作为 key 存放 Bot 实例
+        self._bot_tasks = []
+        """Bot任务列表"""
         self.setup()
 
     @classmethod
@@ -35,28 +37,49 @@ class Adapter(BaseAdapter):
     async def startup(self):
         """启动所有 Bot 的 WebSocket 连接"""
         for bot_config in self.cfg.efchat_bots:
-            bot = Bot(self, **bot_config)
+            bot = Bot(self, bot_config)
             key = f"{bot.nick}@{bot.channel}"
             self.bots[key] = bot
-            asyncio.create_task(bot.connect_ws())
-            asyncio.create_task(self._heartbeat(bot))
+            ws_task = asyncio.create_task(bot.connect_ws())
+            heartbeat_task = asyncio.create_task(self._heartbeat(bot))
+            self._bot_tasks.extend([ws_task, heartbeat_task])
         logger.success("所有 Bot 启动任务已创建")
 
     async def shutdown(self) -> None:
         """关闭所有 Bot 的 WebSocket 连接"""
         for bot in self.bots.values():
             await bot.disconnect_ws()
+        # Cancel and await all background tasks
+        if hasattr(self, "_bot_tasks"):
+            for task in self._bot_tasks:
+                task.cancel()
+            try:
+                await asyncio.gather(*self._bot_tasks, return_exceptions=True)
+            except asyncio.CancelledError:
+                pass
+            self._bot_tasks.clear()
         logger.info("所有 Bot 的 WebSocket 连接已关闭")
+
+    async def rename_bot(self, old_key: str, new_key: str):
+        """在 self.bots 中把键从 old_key 改为 new_key"""
+        try:
+            self.bots[new_key] = self.bots.pop(old_key)
+        except KeyError:
+
+            raise RuntimeError(f"rename_bot failed: {old_key!r} not found")
 
     async def _heartbeat(self, bot: Bot):
         """心跳包维护，防止 WebSocket 断连"""
-        while True:
-            try:
-                await asyncio.sleep(30)
-                await bot.send_packet({"cmd": "ping"})
-            except Exception as e:
-                logger.error(f"Bot {bot.nick}@{bot.channel} 心跳包发送失败: {e}")
-                break
+        try:
+            while True:
+                try:
+                    await asyncio.sleep(30)
+                    await bot.send_packet({"cmd": "ping"})
+                except Exception as e:
+                    logger.error(f"Bot {bot.nick}@{bot.channel} 心跳包发送失败: {e}")
+                    break
+        except asyncio.CancelledError:
+            pass
 
     def handle_connect(self, bot: Bot):
         """Bot 连接成功时调用"""
@@ -77,8 +100,7 @@ class Adapter(BaseAdapter):
             if data.get("channel") is None:
                 data["channel"] = bot.channel
 
-            event_cls = EVENT_MAP.get(data.get("cmd"))
-            if event_cls:
+            if event_cls := EVENT_MAP.get(data.get("cmd")):
                 event = event_cls(**data, self_id=f"{bot.nick}@{bot.channel}")
                 if not (
                     isinstance(event, (ChannelMessageEvent, WhisperMessageEvent))
@@ -93,13 +115,25 @@ class Adapter(BaseAdapter):
         except Exception as e:
             logger.error(f"事件处理错误: {e}")
 
-    async def _handle_captcha(self, bot: Bot, data: dict):
+    async def _handle_captcha(self, bot: Bot, data: dict, captcha_callback: Optional[Callable[[str], Awaitable[str]]] = None, timeout: int = 60,):
         """处理验证码事件"""
         logger.warning("触发验证码验证，请输入验证码后继续")
         match = re.findall(r'!\[]\((.*?)\)', data.get("text", ""))
         captcha_url = f"https://efchat.melon.fish/{match[0]}" if match else data.get("text", "")
         logger.info(f"验证码地址: {captcha_url}")
-        captcha = await asyncio.get_event_loop().run_in_executor(None, input, "请输入验证码: ")
+        # 如果没有传入回调，就用最简单的 input()，但跑到 executor 里去，避免阻塞主线程
+        if captcha_callback is None:
+            captcha_callback = lambda url: asyncio.get_event_loop().run_in_executor(
+                None, input, f"请输入验证码（{url}）: "
+                )
+        captcha = ""
+        if captcha_callback:
+            try:
+                captcha = await asyncio.wait_for(captcha_callback(captcha_url), timeout=timeout)
+            except asyncio.TimeoutError:
+                logger.error("验证码输入超时，跳过本次验证码处理")
+        else:
+            logger.warning("未提供 captcha_callback，跳过验证码输入")
         await bot.send_packet({"cmd": "chat", "text": captcha})
 
     async def _call_api(self, bot: Bot, api: str, **kwargs):

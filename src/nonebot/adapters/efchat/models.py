@@ -46,7 +46,7 @@ class ChatHistory(BaseModel):
     class Config:
        extra = "ignore"
 
-class EFChatBot(BaseModel):
+class EFChatBotConfig(BaseModel):
     nick: str = "EFChatBot"
     """账号昵称"""
     password: str | None = None
