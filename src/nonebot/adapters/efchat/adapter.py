@@ -27,10 +27,9 @@ class Adapter(BaseAdapter):
 
     def __init__(self, driver: Driver, **kwargs):
         super().__init__(driver, **kwargs)
-        self.adapter_config = get_plugin_config(Config)
-        self.self_id = self.adapter_config.efchat_name
-        self.head = self.adapter_config.efchat_head
-        self.channel = self.adapter_config.efchat_channel
+        self.cfg = get_plugin_config(Config)
+        # TODO: 支持多Bot
+        self.bot = self.cfg.efchat_bots[0]
         self.task: Optional[asyncio.Task] = None
         self.setup()
 
@@ -50,13 +49,14 @@ class Adapter(BaseAdapter):
         self.task = asyncio.create_task(self._forward_ws())
 
     async def _call_api(self, api: str, **kwargs):
+        logger.debug(f"Bot {self.bot.nick} calling API <y>{api}</y>")
         await self.send_packet({"cmd": api, **kwargs})
 
     async def _forward_ws(self):
         """WebSocket 连接维护"""
         url = "wss://efchat.melon.fish/ws"
-        pwd = self.adapter_config.efchat_password
-        token = self.adapter_config.efchat_token
+        pwd = self.bot.password
+        token = self.bot.token
         request = Request(method="GET", url=url)
 
         while True:  # 自动重连
@@ -66,15 +66,15 @@ class Adapter(BaseAdapter):
                     logger.success("WebSocket 连接已建立")
                     login_data = {
                         "cmd": "join",
-                        "nick": self.self_id,
-                        "head": self.head,
-                        "channel": self.channel,
+                        "nick": self.bot.nick,
+                        "head": self.bot.head,
+                        "channel": self.bot.channel,
                         "client_key": "EFChat_Bot"
                     }
                     if pwd is not None:
-                        login_data["password"] = pwd
+                        login_data["password"] = self.bot.password
                     elif token is not None:
-                        login_data["token"] = token
+                        login_data["token"] = self.bot.token
                     else:
                         raise RuntimeError("Token和密码请至少提供一项")
 
@@ -104,18 +104,18 @@ class Adapter(BaseAdapter):
         """处理事件"""
         try:
             if data.get("channel") is None:
-                data["channel"] = self.channel
+                data["channel"] = self.bot.channel
             event_cls = EVENT_MAP.get(data["cmd"])
             if event_cls:
-                event = event_cls(**data, self_id=self.self_id)
+                event = event_cls(**data, self_id=self.bot.nick)
     
-                bot = Bot(self, self.self_id)
+                bot = Bot(self, self.bot.nick)
     
                 # 过滤自身消息（私聊和房间消息）
                 if not (
                     isinstance(event, (ChannelMessageEvent, WhisperMessageEvent))
-                    and self.adapter_config.efchat_ignore_self
-                    and event.nick == self.self_id
+                    and self.cfg.efchat_ignore_self
+                    and event.nick == self.bot.nick
                 ):
                     await Bot.handle_event(bot, event)
     
@@ -146,18 +146,18 @@ class Adapter(BaseAdapter):
 
     def _handle_connect(self):
         """处理连接"""
-        bot = Bot(self, self.self_id)
+        bot = Bot(self, self.bot.nick)
         self.bot_connect(bot)
-        logger.success(f"Bot {self.self_id} 已连接")
+        logger.success(f"Bot {self.bot.nick} 已连接")
 
     def _handle_disconnect(self):
         """处理断开连接"""
-        bot = Bot(self, self.self_id)
+        bot = Bot(self, self.bot.nick)
         try:
             self.bot_disconnect(bot)
         except Exception:
             pass
-        logger.info(f"Bot {self.self_id} 已断开")
+        logger.info(f"Bot {self.bot.nick} 已断开")
 
     async def send_packet(self, data: dict):
         """发送数据包"""

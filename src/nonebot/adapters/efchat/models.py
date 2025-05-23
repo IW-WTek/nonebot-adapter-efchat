@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class OnlineUser(BaseModel):
     """用户信息模型"""
@@ -45,3 +45,15 @@ class ChatHistory(BaseModel):
     
     class Config:
        extra = "ignore"
+
+class EFChatBot(BaseModel):
+    nick: str = "EFChatBot"
+    """账号昵称"""
+    password: str | None = None
+    """账号密码"""
+    channel: str = "PublicR"
+    """活跃房间"""
+    head: str = "https://efchat.melon.fish/imgs/ava.png"
+    """头像链接"""
+    token: str | None = None
+    """认证Token"""

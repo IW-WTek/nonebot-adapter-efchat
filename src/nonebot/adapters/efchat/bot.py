@@ -39,7 +39,7 @@ class Bot(BaseBot):
     async def send_chat_message(self, event: ChannelMessageEvent, message: Union[str, Message, MessageSegment], show: bool = True, at_sender: bool = False, reply_message: bool = False):
         """发送房间消息，并格式化 @用户 和 回复原消息"""
         formatted_message = _format_send_message(event, message, at_sender, reply_message)
-        await self.call_api("chat", text=str(formatted_message), show=("1" if show else "0"), head=self.adapter.head)
+        await self.call_api("chat", text=str(formatted_message), show=("1" if show else "0"), head=self.adapter.bot.head)
 
     async def send_whisper_message(self, event: WhisperMessageEvent, message: Union[str, Message, MessageSegment], at_sender: bool = False, reply_message: bool = False):
         """发送私聊消息，并格式化 @用户 和 回复原消息"""
@@ -49,12 +49,12 @@ class Bot(BaseBot):
     async def move(self, new_channel: str):
         """移动到指定房间"""
         await self.call_api("move", channel=new_channel)
-        self.adapter.channel = new_channel
+        self.adapter.bot.channel = new_channel
 
     async def change_nick(self, new_nick: str):
         """修改机器人名称"""
         await self.call_api("changenick", nick=new_nick)
-        self.adapter.self_id = new_nick
+        self.adapter.bot.nick = new_nick
 
     async def get_chat_history(self, num: int):
         """获取历史聊天记录"""
@@ -113,7 +113,7 @@ def _check_nickname(bot: "Bot", event: MessageEvent) -> None:
     if first_msg_seg.type != "text":
         return
 
-    nicknames = {re.escape(n) for n in bot.adapter.adapter_config.nickname}
+    nicknames = {re.escape(bot.adapter.bot.nick)}
     if not nicknames:
         return
 

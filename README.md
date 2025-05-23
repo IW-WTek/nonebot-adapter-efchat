@@ -48,25 +48,30 @@ driver.register_adapter(Adapter)
 ```ini
 DRIVER=~websockets
 
-COMMAND_START=[""]
+# 这里虽然是个列表，但是请只填一个，列表是为将来支持多bot准备的
+EFCHAT_BOTS = '
+[
+    {
+        "nick": "EFChatBot",
+        "password": "",
+        "channel": "PublicR",
+        "head": "https://efchat.melon.fish/imgs/ava.png",
+        "token": ""
+    }
+]
+'
 
-NICKNAME=[]
-
-LOG_LEVEL=INFO
-
-EFCHAT_name=xxxx
-# Bot 名称
-EFCHAT_CHANNEL="PublicR"
-# Bot 活跃的 Channel
-EFCHAT_HEAD="https://efchat.melon.fish/imgs/ava.png"
-# Bot 头像地址
-EFCHAT_TOKEN=xxxx
-# 你的认证 token
-EFCHAT_PASSWORD=xx
-# 你的Bot账号密码（与token二选一，优先使用password）
+EFCHAT_IGNORE_SELF=True
+# 忽略Bot自身的消息，默认启用
 ```
+* 配置项password和token只需要存在一个，如果都存在则只会使用password
+* token的作用只是用来跳过登陆验证码
 
-> ⚠️ **暂不支持同时连接多个房间**
+`nick`是bot账号同时也是在聊天室里显示的n昵称
+`channel`是Bot活跃的房间名称
+`head`是Bot的头像url地址
+`password`和`token`同时只能存在一个，都填写则使用密码登陆
+> ⚠️ **暂不支持同时连接多个房间和多Bot**
 
 ---
 
@@ -76,7 +81,7 @@ EFCHAT_PASSWORD=xx
 EFChat 消息基本模型：
 - `event.message`：消息内容
 - `event.trip`: 加密身份标识
-- `event.self_id`: Bot 名称
+- `event.self_id`: Bot 自身名称
 - `event.nick`：发送者的用户 ID
 - `event.channel`：聊天室名称
 

@@ -1,6 +1,6 @@
 [project]
 name = "nonebot-adapter-efchat"
-version = "0.0.4"
+version = "0.0.5"
 description = "A NoneBot adapter for EFChat and similar chatrooms"
 authors = [
 {name = "molanp", email = "molanpp@outlook.com"},
