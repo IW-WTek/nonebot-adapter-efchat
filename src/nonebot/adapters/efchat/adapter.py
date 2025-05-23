@@ -7,7 +7,7 @@ from nonebot.adapters import Adapter as BaseAdapter
 from nonebot.exception import WebSocketClosed
 from nonebot.drivers import Request, WebSocketClientMixin, Driver
 
-from .config import Config, BotConfig
+from .config import Config
 from .bot import Bot
 from .const import EVENT_MAP
 from .event import WhisperMessageEvent, ChannelMessageEvent
@@ -17,7 +17,7 @@ class Adapter(BaseAdapter):
 
     def __init__(self, driver: Driver, **kwargs):
         super().__init__(driver, **kwargs)
-        self.cfg: Config = get_plugin_config(Config)  # Config 应包含 efchat_bots: List[BotConfig] 及 efchat_ignore_self
+        self.cfg: Config = get_plugin_config(Config)
         self.bots: Dict[str, Bot] = {}  # 使用 "nick@channel" 作为 key 存放 Bot 实例
         self.setup()
 
@@ -35,7 +35,7 @@ class Adapter(BaseAdapter):
     async def startup(self):
         """启动所有 Bot 的 WebSocket 连接"""
         for bot_config in self.cfg.efchat_bots:
-            bot = Bot(self, bot_config)
+            bot = Bot(self, **bot_config)
             key = f"{bot.nick}@{bot.channel}"
             self.bots[key] = bot
             asyncio.create_task(bot.connect_ws())
