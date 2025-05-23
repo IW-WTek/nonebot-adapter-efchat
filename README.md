@@ -25,6 +25,7 @@ EFChat Adapter 是一个适用于 **[EFChat聊天室](https://efchat.melon.fish)
 ## 🚀 特性
 - 🔌 **NoneBot 适配**，可直接集成到 NoneBot 插件系统，实现灵活的机器人开发
 - 📡 **自动处理 EFChat 事件**，支持房间消息、私聊、系统通知等
+- ✨ **暂不支持多Bot**， 暂不支持同时运行并管理多个bot
 
 ---
 
@@ -44,11 +45,10 @@ driver = get_driver()
 driver.register_adapter(Adapter)
 ```
 
-在 `.env` 或配置文件中添加：
+在 `.env` 文件中添加：
 ```ini
 DRIVER=~websockets
 
-# 这里虽然是个列表，但是请只填一个，列表是为将来支持多bot准备的
 EFCHAT_BOTS = '
 [
     {
@@ -64,88 +64,19 @@ EFCHAT_BOTS = '
 EFCHAT_IGNORE_SELF=True
 # 忽略Bot自身的消息，默认启用
 ```
-* 配置项password和token只需要存在一个，如果都存在则只会使用password
-* token的作用只是用来跳过登陆验证码
+* 配置项`password`和`token`只需要存在一个，如果都存在则只会使用`password`
+* `token`的作用只是用来跳过登陆验证码
 
-`nick`是bot账号同时也是在聊天室里显示的n昵称
-`channel`是Bot活跃的房间名称
-`head`是Bot的头像url地址
-`password`和`token`同时只能存在一个，都填写则使用密码登陆
-> ⚠️ **暂不支持同时连接多个房间和多Bot**
+- `nick`是bot账号，同时也是在聊天室里显示的昵称
+- `channel`是Bot活跃的房间名称
+- `head`是Bot的头像url地址
+- `password`和`token`同时只能存在一个，都填写则使用密码登陆
 
----
-
-## 📖 API 参考
-
-### `MessageEvent(Event)`
-EFChat 消息基本模型：
-- `event.message`：消息内容
-- `event.trip`: 加密身份标识
-- `event.self_id`: Bot 自身名称
-- `event.nick`：发送者的用户 ID
-- `event.channel`：聊天室名称
-
-### `send()`
-根据 **消息类型** 选择 `send_chat_message()` 或 `send_whisper_message()`：
-```python
-await bot.send(event, message="你好！", at_sender=True, reply_message=False)
-```
-> **参数说明**：
-> - `event`: 消息事件（`ChannelMessageEvent` 或 `WhisperMessageEvent`）
-> - `message`: 要发送的内容（`str` 或 `Message`）
-> - `at_sender`: 是否 @ 发送者
-> - `reply_message`: 是否回复原消息内容
+> ⚠️ **暂不支持一个bot同时连接多个房间**
 
 ---
 
-### `send_chat_message()`
-发送消息到 **当前房间**：
-```python
-await bot.send_chat_message(event, message="Hello!", show=True, at_sender=False, reply_message=False)
-```
-> **参数说明**：
-> - `event`: 房间消息事件
-> - `message`: 要发送的内容（`str` 或 `Message`）
-> - `show`: 是否在聊天记录中显示 (`True` 显示，`False` 隐藏)
-> - `at_sender`: 是否 @ 发送者
-> - `reply_message`: 是否回复原消息内容
-
----
-
-### `send_whisper_message()`
-发送 **私聊消息** 给指定用户：
-```python
-await bot.send_whisper_message(event, message="Hello EFChat!", at_sender=False, reply_message=False)
-```
-> **参数说明**：
-> - `event`: 私聊消息事件
-> - `message`: 要发送的内容（`str` 或 `Message`）
-> - `at_sender`: 是否 @ 发送者
-> - `reply_message`: 是否回复原消息内容
-
----
-
-### `move()`
-移动 Bot 到指定房间：
-```python
-await bot.move("PrivateRoom")
-```
-
----
-
-### `change_nick()`
-修改 Bot 名称：
-```python
-await bot.change_nick("EFChatBot")
-```
-
----
-
-### `get_chat_history()`
-获取指定数量的 **历史聊天记录**：
-```python
-await bot.get_chat_history(num=50)
-```
+## [📖 API 参考](api.md)
 
 ---
 
