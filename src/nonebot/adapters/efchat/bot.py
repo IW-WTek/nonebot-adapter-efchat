@@ -25,9 +25,13 @@ def _format_send_message(event: MessageEvent, message: Union[str, Message, Messa
 
 
 class Bot(BaseBot):
-    def __init__(self, adapter: "Adapter", self_id: str):
-        super().__init__(adapter, self_id)
+    def __init__(self, adapter: "Adapter", bot_config):
+        """初始化 Bot，构造唯一 self_id 为 "nick@channel" """
+        super().__init__(adapter, f"{bot_config.nick}@{bot_config.channel}")
         self.adapter: Adapter = adapter
+        self.nick = bot_config.nick
+        self.channel = bot_config.channel
+        self.head = bot_config.head
 
     async def send(self, event: MessageEvent, message: Union[str, Message, MessageSegment], **kwargs):
         """选择 whisper 或 chat"""
@@ -39,7 +43,7 @@ class Bot(BaseBot):
     async def send_chat_message(self, event: ChannelMessageEvent, message: Union[str, Message, MessageSegment], show: bool = True, at_sender: bool = False, reply_message: bool = False):
         """发送房间消息，并格式化 @用户 和 回复原消息"""
         formatted_message = _format_send_message(event, message, at_sender, reply_message)
-        await self.call_api("chat", text=str(formatted_message), show=("1" if show else "0"), head=self.adapter.bot.head)
+        await self.call_api("chat", text=str(formatted_message), show=("1" if show else "0"), head=self.head)
 
     async def send_whisper_message(self, event: WhisperMessageEvent, message: Union[str, Message, MessageSegment], at_sender: bool = False, reply_message: bool = False):
         """发送私聊消息，并格式化 @用户 和 回复原消息"""
@@ -49,19 +53,19 @@ class Bot(BaseBot):
     async def move(self, new_channel: str):
         """移动到指定房间"""
         await self.call_api("move", channel=new_channel)
-        self.adapter.bot.channel = new_channel
+        self.channel = new_channel
 
     async def change_nick(self, new_nick: str):
         """修改机器人名称"""
         await self.call_api("changenick", nick=new_nick)
-        self.adapter.bot.nick = new_nick
+        self.nick = new_nick
 
     async def get_chat_history(self, num: int):
         """获取历史聊天记录"""
-        await self.call_api("get_old", num=num)
+        return await self.call_api("get_old", num=num)
 
     async def call_api(self, api: str, **kwargs):
-        return await self.adapter._call_api(api, **kwargs)
+        return await self.adapter._call_api(self, api, **kwargs)
 
     async def handle_event(self, event: Event) -> None:
         """处理收到的事件"""
@@ -82,7 +86,7 @@ def _check_at_me(bot: "Bot", event: MessageEvent) -> None:
         return
 
     def _is_at_me_seg(segment: MessageSegment):
-        return segment.type == "at" and str(segment.data.get("target", "")) == str(event.self_id)
+        return segment.type == "at" and str(segment.data.get("target", "")) == bot.nick
 
     if _is_at_me_seg(event.message[0]):
         event.to_me = True
@@ -113,7 +117,7 @@ def _check_nickname(bot: "Bot", event: MessageEvent) -> None:
     if first_msg_seg.type != "text":
         return
 
-    nicknames = {re.escape(bot.adapter.bot.nick)}
+    nicknames = {re.escape(bot.nick)}
     if not nicknames:
         return
 

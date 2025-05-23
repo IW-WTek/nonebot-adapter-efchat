@@ -10,7 +10,7 @@ class Event(BaseEvent):
     """通用事件"""
     
     self_id: str
-    """机器人自身昵称"""
+    """机器人自身唯一ID"""
     channel: str
     """房间名称"""
     time: int
