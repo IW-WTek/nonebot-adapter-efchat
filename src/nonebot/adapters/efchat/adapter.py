@@ -55,6 +55,8 @@ class Adapter(BaseAdapter):
     async def _forward_ws(self):
         """WebSocket 连接维护"""
         url = "wss://efchat.melon.fish/ws"
+        pwd = self.adapter_config.efchat_password
+        token = self.adapter_config.efchat_token
         request = Request(method="GET", url=url)
 
         while True:  # 自动重连
@@ -62,15 +64,21 @@ class Adapter(BaseAdapter):
                 async with self.websocket(request) as ws:
                     self.ws = ws
                     logger.success("WebSocket 连接已建立")
-
-                    await self.send_packet({
+                    login_data = {
                         "cmd": "join",
                         "nick": self.self_id,
                         "head": self.head,
                         "channel": self.channel,
-                        "token": self.adapter_config.efchat_token,
                         "client_key": "EFChat_Bot"
-                    })
+                    }
+                    if pwd is not None:
+                        login_data["password"] = pwd
+                    elif token is not None:
+                        login_data["token"] = token
+                    else:
+                        raise RuntimeError("Token和密码请至少提供一项")
+
+                    await self.send_packet(login_data)
                     logger.debug("登录请求已发送")
 
                     self._handle_connect()
