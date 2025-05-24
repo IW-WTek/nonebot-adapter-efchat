@@ -64,13 +64,11 @@ EFCHAT_BOTS = '
 EFCHAT_IGNORE_SELF=True
 # 忽略Bot自身的消息，默认启用
 ```
-* 配置项`password`和`token`只需要存在一个，如果都存在则只会使用`password`
-* `token`的作用只是用来跳过登陆验证码
-
+* 配置项`token`是必填项
+* 如果Bot将会拥有管理员权限，请提供`password`字段以确保账号安全
 - `nick`是bot账号，同时也是在聊天室里显示的昵称
 - `channel`是Bot活跃的房间名称
 - `head`是Bot的头像url地址
-- `password`和`token`同时只能存在一个，都填写则使用密码登陆
 
 > ⚠️ **暂不支持一个bot同时连接多个房间**
 

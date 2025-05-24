@@ -71,12 +71,12 @@ class Adapter(BaseAdapter):
                         "channel": self.bot.channel,
                         "client_key": "EFChat_Bot"
                     }
-                    if pwd is not None:
+                    if pwd:
                         login_data["password"] = self.bot.password
-                    elif token is not None:
+                    if token:
                         login_data["token"] = self.bot.token
                     else:
-                        raise RuntimeError("Token和密码请至少提供一项")
+                        raise ValueError("Token是必填项")
 
                     await self.send_packet(login_data)
                     logger.debug("登录请求已发送")
