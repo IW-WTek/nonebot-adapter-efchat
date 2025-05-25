@@ -11,17 +11,20 @@ body:
     id: describe-the-bug
     attributes:
       label: 问题描述/Problem description
+    validations:
       required: true
   - type: input
     id: steps-to-reproduce
     attributes:
       label: 复现步骤/Steps to reproduce
+    validations:
       required: true
   - type: input
     id: expected-behavior
     attributes:
       label: 预期行为/Expected behavior
       description: 期望发生的行为的清晰而简明的描述/A clear and concise description of the behavior that is expected to occur
+    validations:
       required: true
   - type: textarea
     id: screenshots
@@ -33,18 +36,21 @@ body:
     attributes:
       label: 系统架构/System architecture
       placeholder: [e.g. Windows 10/11]
+    validations:
       required: true
   - type: input
     id: efchat-version
     attributes:
       label: nonebot-adapter-efchat 版本/nonebot-adapter-efchat version
       placeholder: [e.g. 0.1.4]
+    validations:
       required: true
   - type: input
     id: python-version
     attributes:
       label: Python 版本/Python version
       placeholder: [e.g. 3.10.1]
+    validations:
       required: true
   - type: textarea
     id: additional-context
