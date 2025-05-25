@@ -1,5 +1,5 @@
 name: Bug反馈/Bug report
-description: 在这里提交你遇到的任何问题/Submit any issues you encounter here
+description: 在这里提交你遇到的任何问题.Submit any issues you encounter here
 title: "[Bug]: "
 labels: ["bug"]
 body:
