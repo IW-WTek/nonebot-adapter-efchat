@@ -1,10 +1,7 @@
 name: Bug反馈/Bug report
 description: 在这里提交你遇到的任何问题/Submit any issues you encounter here
 title: "[Bug]: "
-labels: ["bug", "triage"]
-projects: ["octo-org/1", "octo-org/44"]
-assignees:
-  - octocat
+labels: ["bug"]
 body:
   - type: markdown
     attributes:
@@ -38,9 +35,9 @@ body:
       placeholder: [e.g. Windows 10/11]
       required: true
   - type: input
-    id: mcsmapi-version
+    id: efchat-version
     attributes:
-      label: nonebot-adapter-hackchatlike 版本/nonebot-adapter-hackchatlike version
+      label: nonebot-adapter-efchat 版本/nonebot-adapter-efchat version
       placeholder: [e.g. 0.1.4]
       required: true
   - type: input

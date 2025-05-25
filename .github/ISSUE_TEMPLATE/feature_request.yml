@@ -1,10 +1,7 @@
 name: 功能请求/Feature requests
 description: 建议一个功能的想法Suggest an idea for a feature
 title: "[Feature Request]: "
-labels: ["enhancement", "triage"]
-projects: ["octo-org/1", "octo-org/44"]
-assignees:
-  - octocat
+labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
