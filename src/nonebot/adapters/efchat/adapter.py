@@ -2,7 +2,7 @@ import json
 import re
 import asyncio
 from typing import Optional
-from nonebot import get_plugin_config, logger
+from nonebot import get_plugin_config
 from nonebot.adapters import Adapter as BaseAdapter
 from nonebot.exception import WebSocketClosed
 from nonebot.drivers import Request, WebSocketClientMixin, Driver
@@ -11,6 +11,7 @@ from .config import Config
 from .bot import Bot
 from .const import EVENT_MAP
 from .event import WhisperMessageEvent, ChannelMessageEvent
+from .utils import logger
 
 async def heartbeat(adapter):
     """发送心跳包"""
