@@ -1,6 +1,9 @@
+import json
 from typing import Optional
+from nonebot.drivers import Response
 from nonebot.exception import AdapterException
 from nonebot.exception import NetworkError as BaseNetworkError
+from nonebot.exception import ActionFailed as BaseActionFailed
 
 
 class EFChatAdapterException(AdapterException):
@@ -18,3 +21,14 @@ class NetworkError(BaseNetworkError, EFChatAdapterException):
 
     def __str__(self):
         return self.__repr__()
+
+class ActionFailed(BaseActionFailed, EFChatAdapterException):
+    def __init__(self, response: Response):
+        self.status_code: int = response.status_code
+        self.code: Optional[int] = response.status_code
+        self.message: Optional[str] = response.text
+        self.data: Optional[dict] = None
+        try:
+            self.data: Optional[dict] = response.json()
+        except json.JSONDecodeError:
+            pass
