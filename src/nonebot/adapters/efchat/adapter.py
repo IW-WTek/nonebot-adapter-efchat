@@ -106,7 +106,7 @@ class Adapter(BaseAdapter):
         try:
             if data.get("channel") is None:
                 data["channel"] = self.bot.channel
-            if data["cmd"] == "info" and data.get("type") == "whisper":
+            if data["cmd"] == "info" and data.get("type") == "whisper" and data.get("from") is not None:
                 event_cls = EVENT_MAP["whisper"]
             else:
                 event_cls = EVENT_MAP.get(data["cmd"])
