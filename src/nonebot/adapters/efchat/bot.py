@@ -60,7 +60,7 @@ class Bot(BaseBot):
         await self.call_api("chat", text=str(formatted_message), show=("1" if show else "0"), head=self.adapter.bot.head)
 
     async def send_whisper_message(self, event: WhisperMessageEvent, message: Union[str, Message, MessageSegment], at_sender: bool = False, reply_message: bool = False):
-        """发送私聊消息，并格式化 @用户 和 回复原消息"""
+        """发送私聊消息(因为服务器上的某个尚未发现的bug，此消息不会显示给用户)"""
         formatted_message = _format_send_message(event, message, at_sender, reply_message)
         await self.call_api("whisper", nick=event.nick, text=str(formatted_message))
 

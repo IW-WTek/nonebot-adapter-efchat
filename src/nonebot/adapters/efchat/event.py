@@ -50,20 +50,10 @@ class MessageEvent(Event):
     message_id: str = ""
     """消息ID(空字段)"""
     
-    def __init__(self, **data):
-        super().__init__(**data)
-        # 在私聊事件里，`from` 表示 `nick`
-        if data.get("message_type") == "whisper" and "from" in data:
-            self.nick = data["from"]
-        else:
-            self.nick = data.get("nick") or ""
-
-        # 处理 `message` 解析逻辑（群聊用 `text`，私聊用 `msg`）
-        if data.get("message_type") == "whisper" and "msg" in data:
-            self.message = Message(data["msg"])
-        else:
-            self.message = Message(data["text"])
+    @model_validator(mode="after")
+    def validate_event(self):
         self.original_message = deepcopy(self.message)
+        return self
 
     def get_type(self) -> str:
         return "message"
@@ -92,6 +82,12 @@ class ChannelMessageEvent(MessageEvent):
     """用户头像链接"""
     level: int
     """等级"""
+    message: Message = Message("")
+    """消息内容"""
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.message = Message(data["text"])
 
     def get_event_description(self) -> str:
         return sanitize(f"Message from {self.nick}@[房间:{self.channel}]: {self.message}")
@@ -104,8 +100,18 @@ class WhisperMessageEvent(MessageEvent):
     """私聊事件"""
 
     message_type: Literal["whisper"] = "whisper"
+    nick: str = ""
+    """用户昵称"""
     text: str
     """提示内容"""
+    message: Message = Message("")
+    """消息内容"""
+    
+    
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.nick = data.get("from") or self.self_id
+        self.message = Message(data.get("msg", ""))
 
     def get_event_description(self) -> str:
         return sanitize(f"Message from {self.nick}: {self.message}")
@@ -119,6 +125,12 @@ class HTMLMessageEvent(MessageEvent):
     """来自插件"""
     admin: bool = False
     """来自管理员"""
+    message: Message = Message("")
+    """消息内容"""
+    
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.message = Message(data["text"])
 
     def get_event_description(self) -> str:
         return sanitize(f"Received HTML Message from {self.nick}: {self.message}")
