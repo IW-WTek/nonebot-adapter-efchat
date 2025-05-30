@@ -1,8 +1,9 @@
 import asyncio
+import aiofiles
 import httpx
 from typing import Union
 from nonebot.utils import logger_wrapper
-from .exception import NetworkError
+from .exception import NetworkError, ActionFailed
 
 log = logger_wrapper("EFChat")
 
@@ -19,9 +20,9 @@ async def download_audio(url: str) -> bytes:
             response.raise_for_status()
             return response.content
         except httpx.HTTPStatusError as e:
-            raise ActionFail(e.response)
+            raise ActionFailed(e.response) from e
         except httpx.RequestError as e:
-            raise NetworkError(f"语音 {url} 下载失败: {e}")
+            raise NetworkError(f"语音 {url} 下载失败: {e}") from e
 
 async def upload_voice(url: Union[str, None], path: Union[str, None], raw: Union[bytes, None]) -> str:
     """上传语音文件并返回 `src_name`"""
@@ -50,9 +51,9 @@ async def upload_voice(url: Union[str, None], path: Union[str, None], raw: Union
             )
             response.raise_for_status()
         except httpx.HTTPStatusError as e:
-            raise ActionFail(e.response)
+            raise ActionFailed(e.response) from e
         except httpx.RequestError as e:
-            raise NetworkError(str(e))
+            raise NetworkError(str(e)) from e
         try:
             result = response.json()
         except Exception as e:
@@ -64,9 +65,9 @@ async def upload_voice(url: Union[str, None], path: Union[str, None], raw: Union
 
 
 async def _read_audio_file(path: str) -> bytes:
-    """异步读取本地音频文件"""
-    with open(path, "rb") as f:
-        return f.read()
+    """异步文件读取"""
+    async with aiofiles.open(path, "rb") as f:
+        return await f.read()
 
 class logger:
     @classmethod
