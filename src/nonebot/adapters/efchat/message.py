@@ -5,6 +5,8 @@ from collections.abc import Iterable
 from pathlib import Path
 import re
 
+_VOICE_URL_RE = re.compile(r"https://efchat\.melon\.fish/oss/(.+)")
+
 
 class MessageSegment(BaseMessageSegment["Message"]):
     """基础消息段类，提供静态方法构建不同类型的消息"""
@@ -23,31 +25,52 @@ class MessageSegment(BaseMessageSegment["Message"]):
 
     @staticmethod
     def voice(
-        url: str = None, path: Union[str, Path] = None, raw: bytes = None, src_name: str = None
+        url: str = None,
+        path: Union[str, Path] = None,
+        raw: bytes = None,
+        src_name: str = None
     ) -> "Voice":
         """
-        生成语音消息段，支持：
-        - `url` 语音文件 URL
-        - `path` 本地文件路径（支持 `str` 和 `Path`）
-        - `raw` 语音 `bytes` 数据
-        - `src_name` 资源名称
+        语音消息段
+        
+        以下参数一次只能填一个
+        Args:
+        - url (str): 语音文件的网络地址
+        - path (str|Path): 语音文件路径
+        - raw (bytes): 语音数据
+        - src_name (str): oss资源
         """
+        provided = sum(bool(x) for x in (url, path, raw, src_name))
+        if provided == 0 or provided > 1:
+            raise ValueError("必须且只能提供一个参数 url, path, raw, src_name")
 
-        provided_args = sum(bool(arg) for arg in [url, path, raw, src_name])
-        if provided_args == 0:
-            raise ValueError("必须提供一个参数 (url, path, raw 或 src_name)，不能全部为空")
-        elif provided_args > 1:
-            raise ValueError("只能提供一个参数 (url, path, raw 或 src_name)，不能同时填充多个")
-
-        if url and re.match(r"https://efchat\.melon\.fish/oss/(.+)", url):
-            extracted_src_name = re.search(r"https://efchat\.melon\.fish/oss/(.+)", url)[1]
-            return Voice("voice", {"src": f"USERSENDVOICE_{extracted_src_name}", "url": f"https://efchat.melon.fish/oss/{extracted_src_name}"})
+        if url and (m := _VOICE_URL_RE.match(url)):
+            return MessageSegment._voice_from_src(m[1])
 
         if src_name is not None:
-            src_name = src_name.lstrip("USERSENDVOICE_")
-            return Voice("voice", {"src": f"USERSENDVOICE_{src_name}", "url": f"https://efchat.melon.fish/oss/{src_name}"})
+            return MessageSegment._voice_from_src(src_name)
 
-        return Voice("voice", {"path": str(path) if path else None, "raw": raw, "requires_upload": True})
+        return MessageSegment._voice_upload(url, path, raw)
+
+    @staticmethod
+    def _voice_from_src(src_name: str) -> "Voice":
+        clean = src_name.removeprefix("USERSENDVOICE_")
+        return Voice(
+            "voice",
+            {"src": f"USERSENDVOICE_{clean}", "url": f"https://efchat.melon.fish/oss/{clean}"}
+        )
+
+    @staticmethod
+    def _voice_upload(url: str, path: Union[str, Path], raw: bytes) -> "Voice":
+        return Voice(
+            "voice",
+            {
+                "url": url,
+                "path": str(path) if path else None,
+                "raw": raw,
+                "requires_upload": True
+            }
+        )
 
     def __add__(
         self, other: Union[str, "MessageSegment", Iterable["MessageSegment"]]
@@ -100,6 +123,12 @@ class At(MessageSegment):
 
 class Message(BaseMessage[MessageSegment]):
     """消息类，继承 BaseMessage 并扩展文本解析和合并"""
+    _PARSE_RULES = [
+        # (predicate, handler)
+        (lambda txt: txt.startswith("!["), lambda txt: _parse_image(txt)),
+        (lambda txt: txt.startswith("USERSENDVOICE_"), lambda txt: _parse_voice(txt)),
+        (lambda txt: txt.startswith("@"), lambda txt: _parse_at(txt)),
+    ]
 
     @classmethod
     def get_segment_class(cls) -> Type[MessageSegment]:
@@ -142,47 +171,46 @@ class Message(BaseMessage[MessageSegment]):
 
     @staticmethod
     def _construct(msg: str) -> Iterable[MessageSegment]:
-        segments = []
-        index = 0
-
-        while index < len(msg):
-            # 解析图片
-            if msg[index:].startswith("![") and "](" in msg[index:]:
-                start_index = index + 2
-                alt_text_end = msg.find("](", start_index)
-                url_start = alt_text_end + 2
-                url_end = msg.find(")", url_start)
-
-                if alt_text_end != -1 and url_start != -1 and url_end != -1:
-                    url = msg[url_start:url_end]
-                    segments.append(MessageSegment.image(url))
-                    index = url_end + 1
-                    continue
-
-            # 解析语音
-            elif msg[index:].startswith("USERSENDVOICE_"):
-                end_index = msg.find(" ", index)
-                if end_index == -1:
-                    end_index = len(msg)
-
-                voice_src = msg[index:end_index]
-                segments.append(MessageSegment.voice(src_name=voice_src))
-                index = end_index
-                continue
-
-            # 解析 @
-            elif msg[index] == "@":
-                end_index = msg.find(" ", index)
-                if end_index == -1:
-                    end_index = len(msg)
-                target = msg[index + 1 : end_index]
-                segments.append(MessageSegment.at(target))
-                index = end_index
-                continue
-
-            # 默认纯文本
+        segs, i = [], 0
+        while i < len(msg):
+            for pred, handler in Message._PARSE_RULES:
+                tail = msg[i:]
+                if pred(tail):
+                    seg, inc = handler(tail)
+                    segs.append(seg)
+                    i += inc
+                    break
             else:
-                segments.append(MessageSegment.text(msg[index:]))
+                segs.append(MessageSegment.text(msg[i:]))
                 break
+        return segs
 
-        return segments
+# voice: 格式 USERSENDVOICE_static/xxx
+def _parse_voice(txt: str) -> tuple[MessageSegment, int]:
+    end = txt.find(" ") if " " in txt else len(txt)
+    src = txt[:end].replace("static/", "")
+    return MessageSegment.voice(src_name=src), end
+
+# image: 格式 ![image](url)
+def _parse_image(txt: str) -> tuple[MessageSegment, int]:
+    # 找到第一个 '(' 和对应的 ')'
+    start = txt.find('(')
+    end = txt.find(')', start + 1)
+    if start == -1 or end == -1:
+        # 解析失败，fallback 到 text
+        return MessageSegment.text(txt), len(txt)
+    url = txt[start + 1 : end]
+    seg = MessageSegment.image(url)
+    # consumed = '![image]('  + url + ')'
+    return seg, end + 1
+
+# at: 以 '@' 开头，直到空格或字符串末尾
+def _parse_at(txt: str) -> tuple[MessageSegment, int]:
+    # 如果有空格，就取第一个空格前的所有字符，否则取整条
+    if ' ' in txt:
+        end = txt.find(' ')
+    else:
+        end = len(txt)
+    target = txt[1:end]
+    seg = MessageSegment.at(target)
+    return seg, end

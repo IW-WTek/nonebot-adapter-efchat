@@ -46,7 +46,7 @@ class Bot(BaseBot):
             voice_segment = message
     
         if voice_segment and voice_segment.data.get("requires_upload"):
-            src_name = await upload_voice(voice_segment.data.get("path"), voice_segment.data.get("raw"))
+            src_name = await upload_voice(voice_segment.data.get("url"), voice_segment.data.get("path"), voice_segment.data.get("raw"))
             voice_segment = MessageSegment.voice(src_name=src_name)
     
         if voice_segment:

@@ -1,4 +1,3 @@
-import json
 from typing import Optional
 from nonebot.drivers import Response
 from nonebot.exception import AdapterException
@@ -30,5 +29,5 @@ class ActionFailed(BaseActionFailed, EFChatAdapterException):
         self.data: Optional[dict] = None
         try:
             self.data: Optional[dict] = response.json()
-        except json.JSONDecodeError:
+        except:
             pass

@@ -10,12 +10,27 @@ def sanitize(message: str) -> str:
     """将 `<` 和 `>` 转换为 HTML 实体编码"""
     return message.replace("<", "&lt;").replace(">", "&gt;")
 
-async def upload_voice(path: Union[str, None], raw: Union[bytes, None]) -> str:
-    """上传语音文件并返回 src_name"""
+
+async def download_audio(url: str) -> bytes:
+    """从 URL 下载音频文件并返回 `bytes` 数据"""
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url)
+            response.raise_for_status()
+            return response.content
+        except httpx.HTTPStatusError as e:
+            raise ActionFail(e.response)
+        except httpx.RequestError as e:
+            raise NetworkError(f"语音 {url} 下载失败: {e}")
+
+async def upload_voice(url: Union[str, None], path: Union[str, None], raw: Union[bytes, None]) -> str:
+    """上传语音文件并返回 `src_name`"""
     if raw:
         file_data = raw
     elif path:
         file_data = await asyncio.create_task(_read_audio_file(path))
+    elif url:
+        file_data = await download_audio(url)
     else:
         raise ValueError("音频数据无效，无法上传")
 
@@ -35,7 +50,7 @@ async def upload_voice(path: Union[str, None], raw: Union[bytes, None]) -> str:
             )
             response.raise_for_status()
         except httpx.HTTPStatusError as e:
-            raise NetworkError(f"{e.response.status_code} {e.response.text}")
+            raise ActionFail(e.response)
         except httpx.RequestError as e:
             raise NetworkError(str(e))
         try:
