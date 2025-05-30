@@ -2,6 +2,7 @@ import asyncio
 import httpx
 from typing import Union
 from nonebot.utils import logger_wrapper
+from .exception import NetworkError
 
 log = logger_wrapper("EFChat")
 
@@ -21,17 +22,20 @@ async def upload_voice(path: Union[str, None], raw: Union[bytes, None]) -> str:
     boundary = _get_boundary()
     
     async with httpx.AsyncClient() as client:
+        try:
 
-        response = await client.post(
-            "https://efchat.melon.fish/voice",
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.59",
-                "Origin": "https://efchat.melon.fish",
-                "Referer": "https://efchat.melon.fish/",
-                "Content-Type": f"multipart/form-data; boundary={boundary}",
-            },
-            content=_build_multipart_body(boundary, "voice.mp3", file_data),
-        )
+            response = await client.post(
+                "https://efchat.melon.fish/voice",
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.59",
+                    "Origin": "https://efchat.melon.fish",
+                    "Referer": "https://efchat.melon.fish/",
+                    "Content-Type": f"multipart/form-data; boundary={boundary}",
+                },
+                content=_build_multipart_body(boundary, "voice.mp3", file_data),
+            )
+        except httpx.HTTPError as e:
+            raise NetworkError(msg=f"{type(e)}:{e}")
         result = response.json()
         src = result.get("src")
         if not src:
