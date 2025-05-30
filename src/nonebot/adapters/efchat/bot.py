@@ -30,11 +30,29 @@ class Bot(BaseBot):
         self.adapter: Adapter = adapter
 
     async def send(self, event: MessageEvent, message: Union[str, Message, MessageSegment], **kwargs):
-        """选择 whisper 或 chat"""
-        if isinstance(event, WhisperMessageEvent):
-            await self.send_whisper_message(event, message, **kwargs)
-        elif isinstance(event, ChannelMessageEvent):
-            await self.send_chat_message(event, message, **kwargs)
+        """自适应发送消息"""
+    
+        voice_segment = None
+    
+        target_method = self.send_whisper_message if isinstance(event, WhisperMessageEvent) else self.send_chat_message
+    
+        if isinstance(message, Message):
+            for segment in message:
+                if segment.type == "voice":
+                    voice_segment = segment
+                    break
+    
+        elif isinstance(message, MessageSegment) and message.type == "voice":
+            voice_segment = message
+    
+        if voice_segment and voice_segment.data.get("requires_upload"):
+            src_name = await upload_voice(self.adapter, voice_segment.data.get("path"), voice_segment.data.get("raw"))
+            voice_segment = MessageSegment.voice(src_name=src_name)
+    
+        if voice_segment:
+            await target_method(event, voice_segment)
+        else:
+            await target_method(event, message, **kwargs)
 
     async def send_chat_message(self, event: ChannelMessageEvent, message: Union[str, Message, MessageSegment], show: bool = True, at_sender: bool = False, reply_message: bool = False):
         """发送房间消息，并格式化 @用户 和 回复原消息"""
