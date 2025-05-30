@@ -53,10 +53,10 @@ class MessageEvent(Event):
     @model_validator(mode="before")
     def validate_event(cls, values):
         """校验数据并自动处理 message 和 nick"""
-        message_type = values.get("message_type", "")
+        message_type = self.getattr("message_type", "")
 
         if message_type not in ["whisper", "channel", "html"]:
-            raise ValueError(f"不支持的 message_type: {message_type}")
+            raise ValueError(f"不支持的 message_type: '{message_type}'")
 
         values["nick"] = values.get("from", "") if message_type == "whisper" else values.get("nick", "")
         values["message"] = Message(values.get("msg", "") if message_type == "whisper" else values.get("text", ""))
