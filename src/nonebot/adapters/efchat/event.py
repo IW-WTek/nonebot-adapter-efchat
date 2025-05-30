@@ -15,6 +15,7 @@ class Event(BaseEvent):
     """房间名称"""
     time: int
     """时间"""
+    to_me: bool = False
     
     class Config:
        extra = "ignore"
@@ -26,19 +27,7 @@ class Event(BaseEvent):
         return "".join(str(seg) for seg in msg) if (msg := self.get_message()) else ""
 
     def is_tome(self) -> bool:
-        """判断消息是否是对 Bot 发送的"""
-        from nonebot import get_driver
-
-        bot_name = get_driver().config.efchat_name  # 通过适配器获取 Bot 名称
-
-        return next(
-            (
-                True
-                for segment in self.get_message()
-                if segment.type == "at" and f"@{bot_name}" in segment.data
-            ),
-            isinstance(self, WhisperMessageEvent),
-        )
+        return self.to_me
 
 
 class MessageEvent(Event):
@@ -53,7 +42,6 @@ class MessageEvent(Event):
     """发送者昵称"""
     trip: str = ""
     """加密身份标识"""
-    to_me: bool = False
     
     def __init__(self, **data):
         super().__init__(**data)
