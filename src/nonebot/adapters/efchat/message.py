@@ -139,3 +139,50 @@ class Message(BaseMessage[MessageSegment]):
                 del self[index]
             else:
                 index += 1
+
+    @staticmethod
+    def _construct(msg: str) -> Iterable[MessageSegment]:
+        segments = []
+        index = 0
+
+        while index < len(msg):
+            # 解析图片
+            if msg[index:].startswith("![") and "](" in msg[index:]:
+                start_index = index + 2
+                alt_text_end = msg.find("](", start_index)
+                url_start = alt_text_end + 2
+                url_end = msg.find(")", url_start)
+
+                if alt_text_end != -1 and url_start != -1 and url_end != -1:
+                    url = msg[url_start:url_end]
+                    segments.append(MessageSegment.image(url))
+                    index = url_end + 1
+                    continue
+
+            # 解析语音
+            elif msg[index:].startswith("USERSENDVOICE_"):
+                end_index = msg.find(" ", index)
+                if end_index == -1:
+                    end_index = len(msg)
+
+                voice_src = msg[index:end_index]
+                segments.append(MessageSegment.voice(src_name=voice_src))
+                index = end_index
+                continue
+
+            # 解析 @
+            elif msg[index] == "@":
+                end_index = msg.find(" ", index)
+                if end_index == -1:
+                    end_index = len(msg)
+                target = msg[index + 1 : end_index]
+                segments.append(MessageSegment.at(target))
+                index = end_index
+                continue
+
+            # 默认纯文本
+            else:
+                segments.append(MessageSegment.text(msg[index:]))
+                break
+
+        return segments
