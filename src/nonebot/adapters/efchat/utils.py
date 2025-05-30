@@ -94,5 +94,9 @@ class logger:
         cls.log("CRITICAL", msg)
 
     @classmethod
+    def success(cls, msg):
+        cls.log("SUCCESS", msg)
+
+    @classmethod
     def info(cls, msg):
         cls.log("INFO", msg)
