@@ -110,7 +110,7 @@ class WhisperMessageEvent(MessageEvent):
     
     def __init__(self, **data):
         super().__init__(**data)
-        self.nick = data.get("from") or self.self_id
+        self.nick = data.get("from", "")
         self.message = Message(data.get("msg", ""))
 
     def get_event_description(self) -> str:
