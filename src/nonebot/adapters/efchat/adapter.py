@@ -2,7 +2,7 @@ import json
 import re
 import asyncio
 from typing import Optional
-from nonebot import get_plugin_config, logger
+from nonebot import get_plugin_config
 from nonebot.adapters import Adapter as BaseAdapter
 from nonebot.exception import WebSocketClosed
 from nonebot.drivers import Request, WebSocketClientMixin, Driver
@@ -11,6 +11,7 @@ from .config import Config
 from .bot import Bot
 from .const import EVENT_MAP
 from .event import WhisperMessageEvent, ChannelMessageEvent
+from .utils import logger
 
 async def heartbeat(adapter):
     """发送心跳包"""
@@ -41,10 +42,10 @@ class Adapter(BaseAdapter):
         """适配器初始化"""
         if not isinstance(self.driver, WebSocketClientMixin):
             raise RuntimeError(f"{self.get_name()} 需要 WebSocket Client Driver!")
-        self.driver.on_startup(self.startup)
+        self.on_ready(self.connect_ws)
         self.driver.on_shutdown(self.shutdown)
 
-    async def startup(self):
+    async def connect_ws(self):
         """连接 WebSocket"""
         self.task = asyncio.create_task(self._forward_ws())
 
@@ -105,7 +106,10 @@ class Adapter(BaseAdapter):
         try:
             if data.get("channel") is None:
                 data["channel"] = self.bot.channel
-            event_cls = EVENT_MAP.get(data["cmd"])
+            if data["cmd"] == "info" and data.get("type") == "whisper":
+                event_cls = EVENT_MAP["whisper"]
+            else:
+                event_cls = EVENT_MAP.get(data["cmd"])
             if event_cls:
                 event = event_cls(**data, self_id=self.bot.nick)
     
@@ -126,7 +130,7 @@ class Adapter(BaseAdapter):
                 logger.warning(f"未知事件: {data}")
     
         except Exception as e:
-            logger.error(f"事件处理错误: {e}")
+            logger.error(f"事件处理错误: {type(e)}: {e}")
 
     async def _handle_captcha(self, data):
         """处理验证码事件"""

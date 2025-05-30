@@ -4,7 +4,7 @@ from nonebot.adapters import Bot as BaseBot
 from nonebot.message import handle_event
 from .event import Event, ChannelMessageEvent, WhisperMessageEvent, MessageEvent
 from .message import Message, MessageSegment
-from nonebot import logger
+from .utils import logger, upload_voice
 
 if TYPE_CHECKING:
     from .adapter import Adapter
@@ -30,11 +30,29 @@ class Bot(BaseBot):
         self.adapter: Adapter = adapter
 
     async def send(self, event: MessageEvent, message: Union[str, Message, MessageSegment], **kwargs):
-        """选择 whisper 或 chat"""
-        if isinstance(event, WhisperMessageEvent):
-            await self.send_whisper_message(event, message, **kwargs)
-        elif isinstance(event, ChannelMessageEvent):
-            await self.send_chat_message(event, message, **kwargs)
+        """自适应发送消息"""
+    
+        voice_segment = None
+    
+        target_method = self.send_whisper_message if isinstance(event, WhisperMessageEvent) else self.send_chat_message
+    
+        if isinstance(message, Message):
+            for segment in message:
+                if segment.type == "voice":
+                    voice_segment = segment
+                    break
+    
+        elif isinstance(message, MessageSegment) and message.type == "voice":
+            voice_segment = message
+    
+        if voice_segment and voice_segment.data.get("requires_upload"):
+            src_name = await upload_voice(voice_segment.data.get("url"), voice_segment.data.get("path"), voice_segment.data.get("raw"))
+            voice_segment = MessageSegment.voice(src_name=src_name)
+    
+        if voice_segment:
+            await target_method(event, voice_segment)
+        else:
+            await target_method(event, message, **kwargs)
 
     async def send_chat_message(self, event: ChannelMessageEvent, message: Union[str, Message, MessageSegment], show: bool = True, at_sender: bool = False, reply_message: bool = False):
         """发送房间消息，并格式化 @用户 和 回复原消息"""
@@ -42,7 +60,7 @@ class Bot(BaseBot):
         await self.call_api("chat", text=str(formatted_message), show=("1" if show else "0"), head=self.adapter.bot.head)
 
     async def send_whisper_message(self, event: WhisperMessageEvent, message: Union[str, Message, MessageSegment], at_sender: bool = False, reply_message: bool = False):
-        """发送私聊消息，并格式化 @用户 和 回复原消息"""
+        """发送私聊消息(因为服务器上的某个尚未发现的bug，此消息不会显示给用户)"""
         formatted_message = _format_send_message(event, message, at_sender, reply_message)
         await self.call_api("whisper", nick=event.nick, text=str(formatted_message))
 
