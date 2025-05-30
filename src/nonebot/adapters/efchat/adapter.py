@@ -127,7 +127,7 @@ class Adapter(BaseAdapter):
                 logger.warning(f"未知事件: {data}")
     
         except Exception as e:
-            logger.error(f"事件处理错误: {e}")
+            logger.error(f"事件处理错误: {type(e)}: {e}")
 
     async def _handle_captcha(self, data):
         """处理验证码事件"""

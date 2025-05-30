@@ -35,9 +35,9 @@ class MessageEvent(Event):
     """消息事件"""
 
     post_type: Literal["message"] = "message"
-    message: Message
+    message: Message = Message("")
     """消息内容"""
-    original_message: Message
+    original_message: Message = Message("")
     """原始消息内容"""
     reply: Message = Message("")
     """引用消息(空字段)"""
@@ -50,19 +50,20 @@ class MessageEvent(Event):
     message_id: str = ""
     """消息ID(空字段)"""
     
-    @model_validator(mode="before")
-    def validate_event(cls, values):
-        """校验数据并自动处理 message 和 nick"""
-        message_type = self.getattr("message_type", "")
+    def __init__(self, **data):
+        super().__init__(**data)
+        # 在私聊事件里，`from` 表示 `nick`
+        if data.get("message_type") == "whisper" and "from" in data:
+            self.nick = data["from"]
+        else:
+            self.nick = data.get("nick") or ""
 
-        if message_type not in ["whisper", "channel", "html"]:
-            raise ValueError(f"不支持的 message_type: '{message_type}'")
-
-        values["nick"] = values.get("from", "") if message_type == "whisper" else values.get("nick", "")
-        values["message"] = Message(values.get("msg", "") if message_type == "whisper" else values.get("text", ""))
-        values["original_message"] = deepcopy(values["message"])
-
-        return values
+        # 处理 `message` 解析逻辑（群聊用 `text`，私聊用 `msg`）
+        if data.get("message_type") == "whisper" and "msg" in data:
+            self.message = Message(data["msg"])
+        else:
+            self.message = Message(data["text"])
+        self.original_message = deepcopy(self.message)
 
     def get_type(self) -> str:
         return "message"

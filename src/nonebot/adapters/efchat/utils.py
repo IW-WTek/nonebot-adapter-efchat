@@ -36,7 +36,7 @@ async def upload_voice(path: Union[str, None], raw: Union[bytes, None]) -> str:
         if not src:
             logger.warning("语音上传:响应中未找到 'src' 字段")
     
-        return src_name.get("src", "")
+        return src
 
 
 async def _read_audio_file(path: str) -> bytes:

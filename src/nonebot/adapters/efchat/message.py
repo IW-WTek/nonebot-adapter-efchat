@@ -40,7 +40,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
             raise ValueError("只能提供一个参数 (url, path, raw 或 src_name)，不能同时填充多个")
 
         if url and re.match(r"https://efchat\.melon\.fish/oss/(.+)", url):
-            extracted_src_name = re.search(r"https://efchat\.melon\.fish/oss/(.+)", url).group(1)
+            extracted_src_name = re.search(r"https://efchat\.melon\.fish/oss/(.+)", url)[1]
             return Voice("voice", {"src": f"USERSENDVOICE_{extracted_src_name}", "url": f"https://efchat.melon.fish/oss/{extracted_src_name}"})
 
         if src_name is not None:
