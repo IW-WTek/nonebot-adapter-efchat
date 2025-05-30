@@ -4,7 +4,7 @@ from nonebot.adapters import Bot as BaseBot
 from nonebot.message import handle_event
 from .event import Event, ChannelMessageEvent, WhisperMessageEvent, MessageEvent
 from .message import Message, MessageSegment
-from .utils import logger
+from .utils import logger, upload_voice
 
 if TYPE_CHECKING:
     from .adapter import Adapter

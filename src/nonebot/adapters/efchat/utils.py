@@ -1,4 +1,5 @@
 import asyncio
+import httpx
 from typing import Union
 from nonebot.utils import logger_wrapper
 
