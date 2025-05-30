@@ -42,7 +42,7 @@ class Adapter(BaseAdapter):
         """适配器初始化"""
         if not isinstance(self.driver, WebSocketClientMixin):
             raise RuntimeError(f"{self.get_name()} 需要 WebSocket Client Driver!")
-        self.driver.on_ready(self.connect_ws)
+        self.on_ready(self.connect_ws)
         self.driver.on_shutdown(self.shutdown)
 
     async def connect_ws(self):
