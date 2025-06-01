@@ -59,12 +59,22 @@ class Adapter(BaseAdapter):
         pwd = self.bot.password
         token = self.bot.token
         request = Request(method="GET", url=url)
+        tasks = []
+        is_connect = False
 
-        while True:  # 自动重连
+        while not is_connect:  # 自动重连
             try:
                 async with self.websocket(request) as ws:
                     self.ws = ws
                     logger.success("WebSocket 连接已建立")
+                    is_connect = True
+                    for task in tasks:
+                        if not task.done():
+                            try:
+                                task.cancel()
+                            except Exception as e:
+                                logger.warning(f"任务 {task.get_coro().__name__} 终止失败: {e}")
+                        tasks.clear()
                     login_data = {
                         "cmd": "join",
                         "nick": self.bot.nick,
@@ -83,7 +93,7 @@ class Adapter(BaseAdapter):
                     logger.debug("登录请求已发送")
 
                     self._handle_connect()
-                    asyncio.create_task(heartbeat(self))
+                    tasks.append(asyncio.create_task(heartbeat(self)))
 
                     while True:
                         raw_data = await ws.receive()
