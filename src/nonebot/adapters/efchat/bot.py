@@ -54,7 +54,7 @@ class Bot(BaseBot):
         else:
             await target_method(event, message, **kwargs)
 
-    async def send_chat_message(self, event: ChannelMessageEvent, message: Union[str, Message, MessageSegment], show: bool = True, at_sender: bool = False, reply_message: bool = False):
+    async def send_chat_message(self, event: ChannelMessageEvent, message: Union[str, Message, MessageSegment], show: bool = False, at_sender: bool = False, reply_message: bool = False):
         """发送房间消息，并格式化 @用户 和 回复原消息"""
         formatted_message = _format_send_message(event, message, at_sender, reply_message)
         await self.call_api("chat", text=str(formatted_message), show=("1" if show else "0"), head=self.adapter.bot.head)

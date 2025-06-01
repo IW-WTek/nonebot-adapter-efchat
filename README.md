@@ -92,6 +92,12 @@ async def handle_echo(event: MessageEvent):
     await echo.send(f"你发送的消息是: {event.get_message()}")
 ```
 
+机器人发送的消息默认不保存到聊天记录，如果需要保存，请在发送消息时传入`show=True`
+
+例如
+```py
+await matcher.send("xxx", show=True)
+```
 ---
 
 ## 🔨 开发与贡献
