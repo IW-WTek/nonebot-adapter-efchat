@@ -60,14 +60,12 @@ class Adapter(BaseAdapter):
         token = self.bot.token
         request = Request(method="GET", url=url)
         tasks = []
-        is_connect = False
 
-        while not is_connect:  # 自动重连
+        while True:  # 自动重连
             try:
                 async with self.websocket(request) as ws:
                     self.ws = ws
                     logger.success("WebSocket 连接已建立")
-                    is_connect = True
                     for task in tasks:
                         if not task.done():
                             try:
