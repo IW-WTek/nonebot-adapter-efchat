@@ -106,9 +106,11 @@ class Adapter(BaseAdapter):
 
             except WebSocketClosed as e:
                 logger.error(f"WebSocket 关闭: {e}")
+                self._handle_disconnect()
                 await asyncio.sleep(5)
             except Exception as e:
                 logger.error(f"WebSocket 错误: {e}")
+                self._handle_disconnect()
                 await asyncio.sleep(5)
 
     async def _handle_data(self, data):
