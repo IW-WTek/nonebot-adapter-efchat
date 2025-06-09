@@ -1,7 +1,20 @@
 from .event import (
-    JoinRoomEvent, LeaveRoomEvent, ChannelMessageEvent, WhisperMessageEvent, SystemEvent, 
-    OnlineSetEvent, HTMLMessageEvent, KillEvent, ShoutEvent, OnafkAddEvent, OnafkRemoveEvent, 
-    OnafkRemoveOnlyEvent, ChangeNickEvent, ListHistoryEvent, OnPassEvent, InviteEvent
+    JoinRoomEvent,
+    LeaveRoomEvent,
+    ChannelMessageEvent,
+    WhisperMessageEvent,
+    SystemEvent,
+    OnlineSetEvent,
+    HTMLMessageEvent,
+    KillEvent,
+    ShoutEvent,
+    OnafkAddEvent,
+    OnafkRemoveEvent,
+    OnafkRemoveOnlyEvent,
+    ChangeNickEvent,
+    ListHistoryEvent,
+    OnPassEvent,
+    InviteEvent,
 )
 
 # 事件映射字典
@@ -23,5 +36,5 @@ EVENT_MAP = {
     "changenick": ChangeNickEvent,
     "list": ListHistoryEvent,
     "onpass": OnPassEvent,
-    "invite": InviteEvent
+    "invite": InviteEvent,
 }

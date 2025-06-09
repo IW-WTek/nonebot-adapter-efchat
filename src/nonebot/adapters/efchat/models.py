@@ -1,8 +1,10 @@
-from pydantic import BaseModel, Field
+from typing import Optional
+from pydantic import BaseModel
+
 
 class OnlineUser(BaseModel):
     """用户信息模型"""
-   
+
     nick: str
     """用户名称"""
     trip: str
@@ -19,13 +21,14 @@ class OnlineUser(BaseModel):
     """所在房间"""
     isme: bool
     """是否为用户本身"""
-   
+
     class Config:
-       extra = "ignore"
+        extra = "ignore"
+
 
 class ChatHistory(BaseModel):
     """聊天记录基本模型"""
-    
+
     id: int
     """消息Id"""
     channel: str
@@ -42,18 +45,19 @@ class ChatHistory(BaseModel):
     """用户头像"""
     trip: str
     """加密身份标识"""
-    
+
     class Config:
-       extra = "ignore"
+        extra = "ignore"
+
 
 class EFChatBot(BaseModel):
     nick: str = "EFChatBot"
     """账号昵称"""
-    password: str | None = None
+    password: Optional[str] = None
     """账号密码"""
     channel: str = "PublicR"
     """活跃房间"""
     head: str = "https://efchat.melon.fish/imgs/ava.png"
     """头像链接"""
-    token: str | None = None
+    token: Optional[str] = None
     """认证Token"""

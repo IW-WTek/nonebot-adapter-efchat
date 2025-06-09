@@ -1,15 +1,16 @@
-from typing import Any, Literal
+from typing import Literal
 from copy import deepcopy
 from nonebot.adapters import Event as BaseEvent
 from nonebot.compat import model_dump, model_validator
 
-from .message import Message, MessageSegment
+from .message import Message
 from .utils import sanitize
 from .models import ChatHistory, OnlineUser
 
+
 class Event(BaseEvent):
     """通用事件"""
-    
+
     self_id: str
     """机器人自身昵称"""
     channel: str
@@ -17,9 +18,9 @@ class Event(BaseEvent):
     time: int
     """时间"""
     to_me: bool = False
-    
+
     class Config:
-       extra = "ignore"
+        extra = "ignore"
 
     def get_event_description(self) -> str:
         return sanitize(str(model_dump(self)))
@@ -35,6 +36,7 @@ class MessageEvent(Event):
     """消息事件"""
 
     post_type: Literal["message"] = "message"
+    message_type: str = "none"
     message: Message = Message("")
     """消息内容"""
     original_message: Message = Message("")
@@ -49,7 +51,7 @@ class MessageEvent(Event):
     """加密身份标识"""
     message_id: str = ""
     """消息ID(空字段)"""
-    
+
     @model_validator(mode="after")
     def validate_event(self):
         self.original_message = deepcopy(self.message)
@@ -90,7 +92,9 @@ class ChannelMessageEvent(MessageEvent):
         self.message = Message(data["text"])
 
     def get_event_description(self) -> str:
-        return sanitize(f"Message from {self.nick}@[房间:{self.channel}]: {self.message}")
+        return sanitize(
+            f"Message from {self.nick}@[房间:{self.channel}]: {self.message}"
+        )
 
     def get_session_id(self) -> str:
         return f"group_{self.channel}_{self.nick}"
@@ -106,8 +110,7 @@ class WhisperMessageEvent(MessageEvent):
     """提示内容"""
     message: Message = Message("")
     """消息内容"""
-    
-    
+
     def __init__(self, **data):
         super().__init__(**data)
         self.nick = data["from"]
@@ -127,7 +130,7 @@ class HTMLMessageEvent(MessageEvent):
     """来自管理员"""
     message: Message = Message("")
     """消息内容"""
-    
+
     def __init__(self, **data):
         super().__init__(**data)
         self.message = Message(data["text"])
@@ -139,10 +142,10 @@ class HTMLMessageEvent(MessageEvent):
 class NoticeEvent(Event):
     """通知事件"""
 
-    post_type:Literal["notice"] = "notice"
+    post_type: Literal["notice"] = "notice"
     type: str = ""
     """具体子事件"""
-    
+
     def __init__(self, **data):
         super().__init__(**data)
         self.type = data["cmd"]
@@ -157,21 +160,21 @@ class NoticeEvent(Event):
         raise ValueError("Event has no message!")
 
     def get_user_id(self) -> str | int:
-        return self.nick if hasattr(self, "nick") else ""
+        return ""
 
     def get_session_id(self) -> str:
-        return self.channel if hasattr(self, channel) else ""
+        return self.channel if hasattr(self, "channel") else ""
 
 
 class RequestEvent(Event):
     """请求事件"""
-    
+
     post_type: Literal["request"] = "request"
     type: str = ""
     """具体子事件"""
     text: str
     """事件内容"""
-    
+
     def __init__(self, **data):
         super().__init__(**data)
         self.type = data.get("type") or data["cmd"]
@@ -186,13 +189,15 @@ class RequestEvent(Event):
         return f"{self.post_type}.{self.type}"
 
     def get_event_description(self) -> str:
-        return sanitize(f"Received {self.type} from {self.nick}@[房间:{self.channel}]: {self.text}")
+        return sanitize(
+            f"Received {self.type} from {self.get_user_id()}@[房间:{self.channel}]: {self.text}"
+        )
 
     def get_user_id(self) -> str | int:
-        return self.nick if hasattr(self, "nick") else ""
+        return ""
 
     def get_session_id(self) -> str:
-        return self.channel if hasattr(self, channel) else ""
+        return self.channel if hasattr(self, "channel") else ""
 
 
 class SystemEvent(NoticeEvent):
@@ -202,13 +207,15 @@ class SystemEvent(NoticeEvent):
     """通知具体事件"""
     text: str
     """事件内容"""
-    
+
     def __init__(self, **data):
         super().__init__(**data)
         self.event = data.get("type") or data["cmd"]
 
     def get_event_description(self) -> str:
-        return sanitize(f"{self.event.upper()} from @[房间:{self.channel}]: {self.text}")
+        return sanitize(
+            f"{self.event.upper()} from @[房间:{self.channel}]: {self.text}"
+        )
 
     def get_event_name(self) -> str:
         return f"{self.post_type}.{self.type}.{self.event}"
@@ -221,7 +228,7 @@ class InviteEvent(RequestEvent):
     """邀请人"""
     to: str
     """邀请到的房间"""
-    
+
     def __init__(self, **data):
         super().__init__(**data)
         self.nick = data["from"]
@@ -250,7 +257,9 @@ class JoinRoomEvent(NoticeEvent):
     """用户类型"""
 
     def get_event_description(self) -> str:
-        return sanitize(f"User {self.nick}@[trip:{self.trip}] from {self.city} joined 房间:{self.channel}")
+        return sanitize(
+            f"User {self.nick}@[trip:{self.trip}] from {self.city} joined 房间:{self.channel}"
+        )
 
 
 class LeaveRoomEvent(NoticeEvent):
@@ -270,11 +279,11 @@ class OnlineSetEvent(NoticeEvent):
     """在线用户列表"""
     users: list[OnlineUser]
     """用户详细信息列表"""
-    
+
     def __init__(self, **data):
         super().__init__(**data)
         self.users = [OnlineUser(**user) for user in data.get("users", [])]
-    
+
     def get_event_description(self) -> str:
         return f"当前房间内共有 {len(self.nicks)} 名用户在线"
 
@@ -284,7 +293,7 @@ class KillEvent(NoticeEvent):
 
     nick: str
     """被封禁用户名称"""
-    
+
     def __init__(self, **data):
         super().__init__(**data)
         self.type = data["cmd"]

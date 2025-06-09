@@ -1,6 +1,7 @@
 from nonebot.internal.rule import Rule
 from .event import Event
 
+
 def notice_rule(event_type: type | list[type]) -> Rule:
     """
     Notice限制

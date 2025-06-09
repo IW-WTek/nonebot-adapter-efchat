@@ -24,7 +24,7 @@ EFChat Adapter 是一个适用于 **[EFChat聊天室](https://efchat.melon.fish)
 ## 🚀 特性
 - 🔌 **NoneBot 适配**，可直接集成到 NoneBot 插件系统，实现灵活的机器人开发
 - 📡 **自动处理 EFChat 事件**，支持房间消息、私聊、系统通知等
-- ✨ **暂不支持多Bot**， 暂不支持同时运行并管理多个bot
+- ✨ **支持多Bot**， 支持同时运行并管理多个bot
 
 ---
 
@@ -46,7 +46,7 @@ driver.register_adapter(Adapter)
 
 在 `.env` 文件中添加：
 ```ini
-DRIVER=~websockets
+DRIVER=~websockets+~httpx
 
 EFCHAT_BOTS = '
 [

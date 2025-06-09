@@ -1,5 +1,8 @@
-from nonebot.adapters import MessageSegment as BaseMessageSegment, Message as BaseMessage
-from typing import Type, Union
+from nonebot.adapters import (
+    MessageSegment as BaseMessageSegment,
+    Message as BaseMessage,
+)
+from typing import Type, Union, Optional
 from typing_extensions import Self
 from collections.abc import Iterable
 from pathlib import Path
@@ -25,14 +28,14 @@ class MessageSegment(BaseMessageSegment["Message"]):
 
     @staticmethod
     def voice(
-        url: str = None,
-        path: Union[str, Path] = None,
-        raw: bytes = None,
-        src_name: str = None
+        url: Optional[str] = None,
+        path: Optional[Union[str, Path]] = None,
+        raw: Optional[bytes] = None,
+        src_name: Optional[str] = None,
     ) -> "Voice":
         """
         语音消息段
-        
+
         以下参数一次只能填一个
         Args:
         - url (str): 语音文件的网络地址
@@ -57,19 +60,24 @@ class MessageSegment(BaseMessageSegment["Message"]):
         clean = src_name.removeprefix("USERSENDVOICE_")
         return Voice(
             "voice",
-            {"src": f"USERSENDVOICE_{clean}", "url": f"https://efchat.melon.fish/oss/{clean}"}
+            {
+                "src": f"USERSENDVOICE_{clean}",
+                "url": f"https://efchat.melon.fish/oss/{clean}",
+            },
         )
 
     @staticmethod
-    def _voice_upload(url: str, path: Union[str, Path], raw: bytes) -> "Voice":
+    def _voice_upload(
+        url: Optional[str], path: Optional[Union[str, Path]], raw: Optional[bytes]
+    ) -> "Voice":
         return Voice(
             "voice",
             {
                 "url": url,
                 "path": str(path) if path else None,
                 "raw": raw,
-                "requires_upload": True
-            }
+                "requires_upload": True,
+            },
         )
 
     def __add__(
@@ -100,6 +108,7 @@ class Voice(MessageSegment):
     def __str__(self) -> str:
         return self.data.get("src", "")
 
+
 class Text(MessageSegment):
     """文本消息段"""
 
@@ -123,6 +132,7 @@ class At(MessageSegment):
 
 class Message(BaseMessage[MessageSegment]):
     """消息类，继承 BaseMessage 并扩展文本解析和合并"""
+
     _PARSE_RULES = [
         # (predicate, handler)
         (lambda txt: txt.startswith("!["), lambda txt: _parse_image(txt)),
@@ -185,17 +195,19 @@ class Message(BaseMessage[MessageSegment]):
                 break
         return segs
 
+
 # voice: 格式 USERSENDVOICE_static/xxx
 def _parse_voice(txt: str) -> tuple[MessageSegment, int]:
     end = txt.find(" ") if " " in txt else len(txt)
     src = txt[:end].replace("static/", "")
     return MessageSegment.voice(src_name=src), end
 
+
 # image: 格式 ![image](url)
 def _parse_image(txt: str) -> tuple[MessageSegment, int]:
     # 找到第一个 '(' 和对应的 ')'
-    start = txt.find('(')
-    end = txt.find(')', start + 1)
+    start = txt.find("(")
+    end = txt.find(")", start + 1)
     if start == -1 or end == -1:
         # 解析失败，fallback 到 text
         return MessageSegment.text(txt), len(txt)
@@ -204,13 +216,11 @@ def _parse_image(txt: str) -> tuple[MessageSegment, int]:
     # consumed = '![image]('  + url + ')'
     return seg, end + 1
 
+
 # at: 以 '@' 开头，直到空格或字符串末尾
 def _parse_at(txt: str) -> tuple[MessageSegment, int]:
     # 如果有空格，就取第一个空格前的所有字符，否则取整条
-    if ' ' in txt:
-        end = txt.find(' ')
-    else:
-        end = len(txt)
+    end = txt.find(" ") if " " in txt else len(txt)
     target = txt[1:end]
     seg = MessageSegment.at(target)
     return seg, end
