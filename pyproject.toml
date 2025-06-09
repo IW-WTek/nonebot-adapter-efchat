@@ -1,11 +1,13 @@
 [tool.poetry]
 name = "nonebot-adapter-efchat"
-version = "0.0.8"
+version = "0.0.9"
 description = "A NoneBot adapter for EFChat"
 authors = ["molanp <molanpp@outlook.com>"]
 license = "MIT"
 readme = "README.md"
-package-mode = false
+packages = [
+    { include = "nonebot", from = "src" }
+]
 
 classifiers = [
   "Development Status :: 5 - Production/Stable",
