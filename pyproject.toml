@@ -5,6 +5,7 @@ description = "A NoneBot adapter for EFChat"
 authors = ["molanp <molanpp@outlook.com>"]
 license = "MIT"
 readme = "README.md"
+package-mode = false
 
 classifiers = [
   "Development Status :: 5 - Production/Stable",
