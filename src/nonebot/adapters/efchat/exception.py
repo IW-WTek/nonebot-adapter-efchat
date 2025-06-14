@@ -1,6 +1,6 @@
 import contextlib
 import json
-from typing import Optional
+from typing import Optional, Union
 from nonebot.drivers import Response
 from nonebot.exception import AdapterException
 from nonebot.exception import NetworkError as BaseNetworkError
@@ -29,7 +29,7 @@ class ActionFailed(BaseActionFailed, EFChatAdapterException):
     def __init__(self, response: Response):
         self.status_code: int = response.status_code
         self.code: Optional[int] = response.status_code
-        self.message: Optional[str | bytes] = response.content
+        self.message: Optional[Union[str, bytes]] = response.content
         self.data: Optional[dict] = None
         with contextlib.suppress(Exception):
             if self.message:

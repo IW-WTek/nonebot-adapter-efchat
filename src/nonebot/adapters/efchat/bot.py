@@ -126,7 +126,7 @@ class Bot(BaseBot):
     async def handle_event(self, event: Event) -> None:
         """处理收到的事件"""
         if not (
-            isinstance(event, ChannelMessageEvent | WhisperMessageEvent)
+            isinstance(event, (ChannelMessageEvent, WhisperMessageEvent))
             and self.cfg.ignore_self
             and event.nick == self.cfg.nick
         ):

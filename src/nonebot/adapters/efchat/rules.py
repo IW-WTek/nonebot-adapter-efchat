@@ -1,8 +1,9 @@
+from typing import Union
 from nonebot.internal.rule import Rule
 from .event import Event
 
 
-def notice_rule(event_type: type | list[type]) -> Rule:
+def notice_rule(event_type: Union[type, list[type]]) -> Rule:
     """
     Notice限制
 
