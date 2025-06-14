@@ -52,16 +52,14 @@ EFCHAT_BOTS = '
 [
     {
         "nick": "EFChatBot",
-        "password": "",
+        "password": "", // 可选配置
         "channel": "PublicR",
-        "head": "https://efchat.melon.fish/imgs/ava.png",
-        "token": ""
+        "head": "https://efchat.melon.fish/imgs/ava.png", // 可选，为空使用默认头像
+        "token": "",
+        "ignore_self": true // 默认忽略自身消息
     }
 ]
 '
-
-EFCHAT_IGNORE_SELF=True
-# 忽略Bot自身的消息，默认启用
 ```
 * 配置项`token`是必填项
 * 如果Bot将会拥有管理员权限，请提供`password`字段以确保账号安全

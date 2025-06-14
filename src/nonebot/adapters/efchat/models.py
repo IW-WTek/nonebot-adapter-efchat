@@ -50,7 +50,7 @@ class ChatHistory(BaseModel):
         extra = "ignore"
 
 
-class EFChatBot(BaseModel):
+class EFChatBotConfig(BaseModel):
     nick: str = "EFChatBot"
     """账号昵称"""
     password: Optional[str] = None
@@ -61,3 +61,5 @@ class EFChatBot(BaseModel):
     """头像链接"""
     token: Optional[str] = None
     """认证Token"""
+    ignore_self: bool = True
+    """忽略自身消息"""

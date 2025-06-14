@@ -2,8 +2,7 @@ import re
 from typing import TYPE_CHECKING, Union
 from nonebot.adapters import Bot as BaseBot
 from nonebot.message import handle_event
-
-from .models import EFChatBot
+from .models import EFChatBotConfig
 from .event import Event, ChannelMessageEvent, WhisperMessageEvent, MessageEvent
 from .message import Message, MessageSegment
 from .utils import logger, upload_voice
@@ -34,10 +33,9 @@ def _format_send_message(
 
 
 class Bot(BaseBot):
-    def __init__(self, adapter: "Adapter", self_id: str, bot: EFChatBot):
+    def __init__(self, adapter: "Adapter", self_id: str, cfg: EFChatBotConfig):
         super().__init__(adapter, self_id)
-        self.adapter: Adapter = adapter
-        self.bot = bot
+        self.cfg = cfg
 
     async def send(
         self,
@@ -54,7 +52,7 @@ class Bot(BaseBot):
                 return self.send_chat_message(event, **kwargs)
             if isinstance(event, WhisperMessageEvent):
                 return self.send_whisper_message(event, **kwargs)
-            raise ValueError("Unsupported event type")
+            raise ValueError(f"Unsupported MessageEvent type: {type(event)}")
 
         if isinstance(message, Message):
             for segment in message:
@@ -95,7 +93,7 @@ class Bot(BaseBot):
             "chat",
             text=str(formatted_message),
             show=("1" if show else "0"),
-            head=self.bot.head,
+            head=self.cfg.head,
         )
 
     async def send_whisper_message(
@@ -114,30 +112,34 @@ class Bot(BaseBot):
     async def move(self, new_channel: str):
         """移动到指定房间"""
         await self.call_api("move", channel=new_channel)
-        self.bot.channel = new_channel
+        self.cfg.channel = new_channel
 
     async def change_nick(self, new_nick: str):
         """修改机器人名称"""
         await self.call_api("changenick", nick=new_nick)
-        self.bot.nick = new_nick
+        self.cfg.nick = new_nick
 
     async def get_chat_history(self, num: int):
         """获取历史聊天记录"""
         await self.call_api("get_old", num=num)
 
-    async def call_api(self, api: str, **kwargs):
-        return await self.adapter._call_api(self.bot, api, **kwargs)
-
     async def handle_event(self, event: Event) -> None:
         """处理收到的事件"""
-        if isinstance(event, MessageEvent):
-            _check_at_me(event)
-            _check_nickname(self, event)
+        if not (
+            isinstance(event, ChannelMessageEvent | WhisperMessageEvent)
+            and self.cfg.ignore_self
+            and event.nick == self.cfg.nick
+        ):
+            if isinstance(event, MessageEvent):
+                _check_at_me(self, event)
+                _check_nickname(self, event)
 
-        await handle_event(self, event)
+            await handle_event(self, event)
+        else:
+            logger.debug(f"EFChat {self.self_id} | 过滤自身消息: {event.get_plaintext()}")
 
 
-def _check_at_me(event: MessageEvent) -> None:
+def _check_at_me(bot, event: MessageEvent) -> None:
     """检查消息开头或结尾是否存在 @机器人，去除并赋值 `event.to_me`"""
     if not isinstance(event, MessageEvent) or not event.message:
         return
@@ -148,7 +150,7 @@ def _check_at_me(event: MessageEvent) -> None:
 
     def _is_at_me_seg(segment: MessageSegment):
         return segment.type == "at" and str(segment.data.get("target", "")) == str(
-            event.self_id
+            bot.self_id
         )
 
     if _is_at_me_seg(event.message[0]):
@@ -184,7 +186,7 @@ def _check_nickname(bot: "Bot", event: MessageEvent) -> None:
     if first_msg_seg.type != "text":
         return
 
-    nicknames = {re.escape(bot.bot.nick)}
+    nicknames = {re.escape(bot.cfg.nick)}
     if not nicknames:
         return
 

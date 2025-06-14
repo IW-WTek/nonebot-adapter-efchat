@@ -1,8 +1,9 @@
-from typing import Literal
+from typing import TYPE_CHECKING, ClassVar, Literal, TypeVar
 from copy import deepcopy
+from datetime import datetime
 from nonebot.adapters import Event as BaseEvent
-from nonebot.compat import model_dump, model_validator
-
+from nonebot.compat import model_dump, model_validator, PYDANTIC_V2, ConfigDict
+from nonebot.compat import type_validate_python
 from .message import Message
 from .utils import sanitize
 from .models import ChatHistory, OnlineUser
@@ -11,16 +12,46 @@ from .models import ChatHistory, OnlineUser
 class Event(BaseEvent):
     """通用事件"""
 
-    self_id: str
-    """机器人自身昵称"""
-    channel: str
-    """房间名称"""
+    cmd: str
+    """原始事件"""
+    __cmd__: ClassVar[str] = "unknown"
+    event_type: str
     time: int
     """时间"""
-    to_me: bool = False
+    if TYPE_CHECKING:
+        to_me: bool
 
-    class Config:
-        extra = "ignore"
+    if PYDANTIC_V2:
+
+        model_config: ConfigDict = ConfigDict(
+            extra="allow",  # type: ignore
+            arbitrary_types_allowed=True,  # type: ignore
+            json_encoders={datetime: lambda dt: int(dt.timestamp())},  # type: ignore
+        )
+    else:
+
+        class Config:
+            extra = "allow"
+            arbitrary_types_allowed = True
+            copy_on_model_validation = "none"
+            json_encoders = {
+                datetime: lambda dt: int(dt.timestamp()),
+            }
+
+    def get_type(self) -> str:
+        return self.event_type
+
+    def get_event_name(self) -> str:
+        return self.cmd
+
+    def get_user_id(self) -> str:
+        raise ValueError("This event does not have a user_id")
+
+    def get_session_id(self) -> str:
+        raise ValueError("This event does not have a session_id")
+
+    def get_message(self) -> "Message":
+        raise ValueError("This event does not have a message")
 
     def get_event_description(self) -> str:
         return sanitize(str(model_dump(self)))
@@ -32,36 +63,54 @@ class Event(BaseEvent):
         return self.to_me
 
 
+EVENT_CLASSES: dict[str, type[Event]] = {}
+
+E = TypeVar("E", bound="Event")
+
+
+def register_event_class(event_class: type[E]) -> type[E]:
+
+    __cmd__ = event_class.__cmd__.split("|")
+
+    for value in __cmd__:
+        EVENT_CLASSES[value] = event_class
+    return event_class
+
+
+@register_event_class
 class MessageEvent(Event):
     """消息事件"""
 
-    post_type: Literal["message"] = "message"
-    message_type: str = "none"
-    message: Message = Message("")
-    """消息内容"""
-    original_message: Message = Message("")
-    """原始消息内容"""
-    reply: Message = Message("")
-    """引用消息(空字段)"""
+    __cmd__: ClassVar[str] = "chat"
+    event_type: str = "message"
     isbot: bool = False
     """是否机器人"""
-    nick: str = ""
+    nick: str
     """发送者昵称"""
-    trip: str = ""
+    trip: str
     """加密身份标识"""
-    message_id: str = ""
-    """消息ID(空字段)"""
+    to_me: bool = False
+    message_type: ClassVar[Literal["channel", "whisper", "html"]]
 
-    @model_validator(mode="after")
-    def validate_event(self):
-        self.original_message = deepcopy(self.message)
-        return self
+    if TYPE_CHECKING:
+        message: Message
+        original_message: Message
+        message_id: None = None
+        """消息ID"""
+        reply: None = None
+        """不支持获取引用消息"""
+        
 
-    def get_type(self) -> str:
-        return "message"
+    @model_validator(mode="before")
+    def handle_message(cls, values):
+        if isinstance(values, dict):
+            segments = values.get("msg") if "msg" in values else values.get("text")
+            values["message"] = Message(segments)
+            values["original_message"] = deepcopy(values["message"])
+        return values
 
     def get_event_name(self) -> str:
-        return f"{self.post_type}.{self.message_type}"
+        return f"{self.event_type}.{self.message_type}"
 
     def get_message(self) -> Message:
         return self.message
@@ -69,174 +118,148 @@ class MessageEvent(Event):
     def get_user_id(self) -> str:
         return self.nick
 
-    def get_session_id(self) -> str:
-        return ""
-
     def is_tome(self) -> bool:
         return self.to_me
+
+    def convert(self, data: dict) -> "MessageEvent":
+        if data.get("type") == "whisper" and data.get("from") is not None:
+            cls = WhisperMessageEvent
+        else:
+            cls = ChannelMessageEvent
+        return type_validate_python(cls, model_dump(self))
 
 
 class ChannelMessageEvent(MessageEvent):
     """房间消息事件"""
 
-    message_type: Literal["channel"] = "channel"
+    message_type: str = "channel"
     head: str
     """用户头像链接"""
     level: int
     """等级"""
-    message: Message = Message("")
-    """消息内容"""
-
-    def __init__(self, **data):
-        super().__init__(**data)
-        self.message = Message(data["text"])
+    channel: str
+    """房间名称"""
+    mod: bool
+    """是否为mod身份组"""
 
     def get_event_description(self) -> str:
         return sanitize(
-            f"Message from {self.nick}@[房间:{self.channel}]: {self.message}"
+            f"Chaneel Message from {self.nick}@[trip: {self.trip}]: {self.message}"
         )
 
     def get_session_id(self) -> str:
-        return f"group_{self.channel}_{self.nick}"
+        return f"channel_{self.nick}"
 
 
 class WhisperMessageEvent(MessageEvent):
     """私聊事件"""
 
-    message_type: Literal["whisper"] = "whisper"
-    nick: str = ""
-    """用户昵称"""
+    message_type: str = "whisper"
     text: str
     """提示内容"""
-    message: Message = Message("")
-    """消息内容"""
 
-    def __init__(self, **data):
-        super().__init__(**data)
-        self.nick = data["from"]
-        self.message = Message(data["msg"])
+    @model_validator(mode="before")
+    def handle_message(cls, values):
+        values = super().handle_message(values)
+        if isinstance(values, dict):
+            values["nick"] = values["from"]
+        return values
 
     def get_event_description(self) -> str:
-        return sanitize(f"Message from {self.nick}: {self.message}")
+        return sanitize(
+            f"Whisper Message from {self.nick}@[trip: {self.trip}]: {self.message}"
+        )
+
+    def get_session_id(self) -> str:
+        return f"whisper_{self.nick}"
 
 
+@register_event_class
 class HTMLMessageEvent(MessageEvent):
     """HTML消息事件"""
 
-    message_type: Literal["html"] = "html"
+    __cmd__: ClassVar[str] = "html"
+    message_type: str = "html"
     mod: bool = False
     """来自插件"""
     admin: bool = False
     """来自管理员"""
-    message: Message = Message("")
-    """消息内容"""
 
-    def __init__(self, **data):
-        super().__init__(**data)
-        self.message = Message(data["text"])
+    def get_session_id(self) -> str:
+        return f"whisper_{self.nick}"
 
     def get_event_description(self) -> str:
-        return sanitize(f"Received HTML Message from {self.nick}: {self.message}")
+        return sanitize(f"HTML Message from {self.nick}: {self.message}")
 
 
 class NoticeEvent(Event):
     """通知事件"""
 
-    post_type: Literal["notice"] = "notice"
+    event_type: str = "notice"
     type: str = ""
     """具体子事件"""
 
-    def __init__(self, **data):
-        super().__init__(**data)
-        self.type = data["cmd"]
+    @model_validator(mode="before")
+    def handle_message(cls, values):
+        if isinstance(values, dict):
+            values["type"] = values["cmd"]
+        return values
 
     def get_event_name(self) -> str:
-        return f"{self.post_type}.{self.type}"
-
-    def get_type(self) -> str:
-        return self.post_type
-
-    def get_message(self) -> Message:
-        raise ValueError("Event has no message!")
-
-    def get_user_id(self) -> str | int:
-        return ""
-
-    def get_session_id(self) -> str:
-        return self.channel if hasattr(self, "channel") else ""
+        return f"{self.event_type}.{self.type}"
+    
 
 
 class RequestEvent(Event):
     """请求事件"""
 
-    post_type: Literal["request"] = "request"
-    type: str = ""
-    """具体子事件"""
+    event_type: str = "request"
     text: str
     """事件内容"""
-
-    def __init__(self, **data):
-        super().__init__(**data)
-        self.type = data.get("type") or data["cmd"]
-
-    def get_type(self) -> str:
-        return "request"
-
-    def get_message(self) -> Message:
-        raise ValueError("Event has no message!")
+    type: str
+    """具体子事件"""
 
     def get_event_name(self) -> str:
-        return f"{self.post_type}.{self.type}"
+        return f"{self.event_type}.{self.type}"
 
     def get_event_description(self) -> str:
-        return sanitize(
-            f"Received {self.type} from {self.get_user_id()}@[房间:{self.channel}]: {self.text}"
-        )
-
-    def get_user_id(self) -> str | int:
-        return ""
-
-    def get_session_id(self) -> str:
-        return self.channel if hasattr(self, "channel") else ""
+        return sanitize(f"Received {self.type} from {self.get_user_id()}: {self.text}")
 
 
-class SystemEvent(NoticeEvent):
+@register_event_class
+class SystemNoticeEvent(NoticeEvent):
     """系统通知事件"""
 
-    event: str = "info"
-    """通知具体事件"""
+    __cmd__: ClassVar[str] = "info|warn"
     text: str
     """事件内容"""
 
-    def __init__(self, **data):
-        super().__init__(**data)
-        self.event = data.get("type") or data["cmd"]
-
     def get_event_description(self) -> str:
-        return sanitize(
-            f"{self.event.upper()} from @[房间:{self.channel}]: {self.text}"
-        )
-
-    def get_event_name(self) -> str:
-        return f"{self.post_type}.{self.type}.{self.event}"
+        return sanitize(f"Received notice {self.type.upper()}: {self.text}")
 
 
+@register_event_class
 class InviteEvent(RequestEvent):
     """邀请事件"""
 
-    nick: str = ""
-    """邀请人"""
+    __cmd__: ClassVar[str] = "invite"
     to: str
     """邀请到的房间"""
+    nick: str
+    """邀请人"""
 
-    def __init__(self, **data):
-        super().__init__(**data)
-        self.nick = data["from"]
+    @model_validator(mode="before")
+    def handle_message(cls, values):
+        if isinstance(values, dict):
+            values["nick"] = values["from"]
+        return values
 
 
+@register_event_class
 class JoinRoomEvent(NoticeEvent):
     """加入房间事件"""
 
+    __cmd__: ClassVar[str] = "onlineAdd"
     city: str
     """地理位置"""
     client: str
@@ -258,13 +281,15 @@ class JoinRoomEvent(NoticeEvent):
 
     def get_event_description(self) -> str:
         return sanitize(
-            f"User {self.nick}@[trip:{self.trip}] from {self.city} joined 房间:{self.channel}"
+            f"User {self.nick}@[trip:{self.trip}] from {self.city} joined the room"
         )
 
 
+@register_event_class
 class LeaveRoomEvent(NoticeEvent):
     """离开房间事件"""
 
+    __cmd__: ClassVar[str] = "onlineRemove"
     nick: str
     """用户名"""
 
@@ -272,39 +297,45 @@ class LeaveRoomEvent(NoticeEvent):
         return sanitize(f"User {self.nick} left the room")
 
 
+@register_event_class
 class OnlineSetEvent(NoticeEvent):
     """在线人数事件"""
 
+    __cmd__: ClassVar[str] = "onlineSet"
     nicks: list[str]
     """在线用户列表"""
     users: list[OnlineUser]
     """用户详细信息列表"""
 
-    def __init__(self, **data):
-        super().__init__(**data)
-        self.users = [OnlineUser(**user) for user in data.get("users", [])]
 
     def get_event_description(self) -> str:
         return f"当前房间内共有 {len(self.nicks)} 名用户在线"
 
 
+@register_event_class
 class KillEvent(NoticeEvent):
     """封禁事件"""
 
+    __cmd__: ClassVar[str] = "kill|unkill"
     nick: str
     """被封禁用户名称"""
 
-    def __init__(self, **data):
-        super().__init__(**data)
-        self.type = data["cmd"]
+    @model_validator(mode="before")
+    def handle_message(cls, values):
+        values = super().handle_message(values)
+        if isinstance(values, dict):
+            values["type"] = values["cmd"]
+        return values
 
     def get_event_description(self) -> str:
         return sanitize(f"User {self.nick} has been {self.type}.")
 
 
+@register_event_class
 class ShoutEvent(NoticeEvent):
     """用户喊话事件，表示一个广播式的消息"""
 
+    __cmd__: ClassVar[str] = "shout"
     text: str
     """喊话的具体内容"""
 
@@ -313,9 +344,11 @@ class ShoutEvent(NoticeEvent):
         return sanitize(f"Received Shout: {self.text}")
 
 
+@register_event_class
 class OnafkAddEvent(NoticeEvent):
     """Onafk add"""
 
+    __cmd__: ClassVar[str] = "onafkAdd"
     nick: str
     """用户名"""
 
@@ -324,9 +357,11 @@ class OnafkAddEvent(NoticeEvent):
         return sanitize(f"User {self.nick} enters the AFK state")
 
 
+@register_event_class
 class OnafkRemoveEvent(NoticeEvent):
     """Onafk remove"""
 
+    __cmd__: ClassVar[str] = "onafkRemove"
     nick: str
     """用户名"""
 
@@ -335,9 +370,11 @@ class OnafkRemoveEvent(NoticeEvent):
         return sanitize(f"User {self.nick} exits the AFK state")
 
 
+@register_event_class
 class OnafkRemoveOnlyEvent(NoticeEvent):
     """Onafk remove only"""
 
+    __cmd__: ClassVar[str] = "onafkRemoveOnly"
     nick: str
     """用户名"""
 
@@ -346,9 +383,11 @@ class OnafkRemoveOnlyEvent(NoticeEvent):
         return sanitize(f"User {self.nick} is removed from the AFK state")
 
 
+@register_event_class
 class ChangeNickEvent(NoticeEvent):
     """用户更改昵称事件"""
 
+    __cmd__: ClassVar[str] = "changenick"
     nick: str
     """新的用户昵称"""
 
@@ -357,26 +396,24 @@ class ChangeNickEvent(NoticeEvent):
         return sanitize(f"Self Nickname has been changed to {self.nick}")
 
 
+@register_event_class
 class ListHistoryEvent(NoticeEvent):
     """聊天记录事件，表示获取历史消息"""
 
+    __cmd__: ClassVar[str] = "list"
     text: list[ChatHistory]
     """历史消息列表（按时间倒序排列，最新消息在前）"""
-
-    def __init__(self, **data):
-        """初始化事件，并解析历史消息"""
-        super().__init__(**data)
-
-        self.text = [ChatHistory(**msg) for msg in data.get("text", [])]
 
     def get_event_description(self) -> str:
         """获取事件描述"""
         return f"Received {len(self.text)} historical message records"
 
 
+@register_event_class
 class OnPassEvent(NoticeEvent):
     """验证码验证事件"""
 
+    __cmd__: ClassVar[str] = "onpass"
     ispass: bool
     """是否通过验证"""
 

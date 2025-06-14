@@ -10,7 +10,6 @@ EFChat 适配器提供了多个事件类型，用于处理消息和通知：
 |--------------|----------------|
 | `event.message` | 消息内容 |
 | `event.trip` | 加密身份标识 |
-| `event.self_id` | Bot 自身唯一ID |
 | `event.nick` | 发送者的用户 ID |
 | `event.channel` | 聊天室名称 |
 
