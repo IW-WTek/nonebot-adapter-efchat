@@ -137,7 +137,7 @@ class ChannelMessageEvent(MessageEvent):
     """用户头像链接"""
     level: int
     """等级"""
-    channel: str
+    channel: str = ""
     """房间名称"""
     mod: bool = False
     """是否为mod身份组"""
