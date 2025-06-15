@@ -87,7 +87,7 @@ class MessageEvent(Event):
     """是否机器人"""
     nick: str
     """发送者昵称"""
-    trip: str
+    trip: str = ""
     """加密身份标识"""
     to_me: bool = False
     message_type: ClassVar[Literal["channel", "whisper", "html"]]
@@ -139,7 +139,7 @@ class ChannelMessageEvent(MessageEvent):
     """等级"""
     channel: str
     """房间名称"""
-    mod: bool
+    mod: bool = False
     """是否为mod身份组"""
 
     def get_event_description(self) -> str:
