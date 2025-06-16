@@ -140,7 +140,7 @@ class ChannelMessageEvent(MessageEvent):
     channel: str = ""
     """房间名称"""
     mod: bool = False
-    """是否为mod身份组"""
+    """是否受信用户"""
 
     def get_event_description(self) -> str:
         return sanitize(
@@ -181,7 +181,7 @@ class HTMLMessageEvent(MessageEvent):
     __cmd__: ClassVar[str] = "html"
     message_type: str = "html"
     mod: bool = False
-    """来自插件"""
+    """来自受信用户"""
     admin: bool = False
     """来自管理员"""
 
@@ -277,7 +277,7 @@ class JoinRoomEvent(NoticeEvent):
     userid: int
     """用户ID"""
     utype: str
-    """用户类型"""
+    """用户组"""
 
     def get_event_description(self) -> str:
         return sanitize(
