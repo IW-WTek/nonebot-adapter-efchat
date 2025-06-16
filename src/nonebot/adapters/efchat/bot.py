@@ -76,7 +76,9 @@ class Bot(BaseBot):
         if voice_segment:
             await target_method(event, voice_segment=voice_segment)
         else:
-            await target_method(event, message=message, at_sender=at_sender, reply_message=reply_message)
+            await target_method(
+                event, message=message, at_sender=at_sender, reply_message=reply_message
+            )
 
     async def send_chat_message(
         self,
@@ -137,7 +139,9 @@ class Bot(BaseBot):
 
             await handle_event(self, event)
         else:
-            logger.debug(f"EFChat {self.self_id} | 过滤自身消息: {event.get_plaintext()}")
+            logger.debug(
+                f"EFChat {self.self_id} | 过滤自身消息: {event.get_plaintext()}"
+            )
 
 
 def _check_at_me(bot, event: MessageEvent) -> None:
