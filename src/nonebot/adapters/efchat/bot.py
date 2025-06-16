@@ -22,7 +22,7 @@ def _format_send_message(
 
     if reply_message:
         full_message += MessageSegment.text(
-            f"> {event.trip} {event.nick}:\n> {event.get_message()}\n"
+            f"> {event.trip} {event.nick}:\n> {event.get_message()}\n\n"
         )
 
     if at_sender and event.nick:
@@ -41,7 +41,8 @@ class Bot(BaseBot):
         self,
         event: MessageEvent,
         message: Union[str, Message, MessageSegment],
-        **kwargs,
+        at_sender: bool = False,
+        reply_message: bool = False,
     ):
         """自适应发送消息"""
 
@@ -75,7 +76,7 @@ class Bot(BaseBot):
         if voice_segment:
             await target_method(event, voice_segment=voice_segment)
         else:
-            await target_method(event, message=message, **kwargs)
+            await target_method(event, message=message, at_sender=at_sender, reply_message=reply_message)
 
     async def send_chat_message(
         self,
