@@ -2,6 +2,7 @@ import re
 from typing import TYPE_CHECKING, Union
 from nonebot.adapters import Bot as BaseBot
 from nonebot.message import handle_event
+from nonebot.matcher import current_event
 from .models import EFChatBotConfig
 from .event import Event, ChannelMessageEvent, WhisperMessageEvent, MessageEvent
 from .message import Message, MessageSegment
@@ -12,13 +13,14 @@ if TYPE_CHECKING:
 
 
 def _format_send_message(
-    event: MessageEvent,
     message: Union[str, Message, MessageSegment],
     at_sender: bool,
     reply_message: bool,
 ) -> Message:
     """格式化消息，添加 @用户 和 回复原消息"""
     full_message = Message()
+    event = current_event.get()
+    assert isinstance(event, MessageEvent)
 
     if reply_message:
         full_message += MessageSegment.text(
@@ -50,9 +52,9 @@ class Bot(BaseBot):
 
         def target_method(event: MessageEvent, **kwargs):
             if isinstance(event, ChannelMessageEvent):
-                return self.send_chat_message(event, **kwargs)
+                return self.send_chat_message(**kwargs)
             if isinstance(event, WhisperMessageEvent):
-                return self.send_whisper_message(event, **kwargs)
+                return self.send_whisper_message(**kwargs)
             raise ValueError(f"Unsupported MessageEvent type: {type(event)}")
 
         if isinstance(message, Message):
@@ -82,35 +84,25 @@ class Bot(BaseBot):
 
     async def send_chat_message(
         self,
-        event: ChannelMessageEvent,
         message: Union[str, Message, MessageSegment],
         show: bool = False,
-        at_sender: bool = False,
-        reply_message: bool = False,
     ):
         """发送房间消息，并格式化 @用户 和 回复原消息"""
-        formatted_message = _format_send_message(
-            event, message, at_sender, reply_message
-        )
         await self.call_api(
             "chat",
-            text=str(formatted_message),
+            text=str(message),
             show=("1" if show else "0"),
             head=self.cfg.head,
         )
 
     async def send_whisper_message(
         self,
-        event: WhisperMessageEvent,
         message: Union[str, Message, MessageSegment],
-        at_sender: bool = False,
-        reply_message: bool = False,
     ):
         """发送私聊消息(因为服务器上的某个尚未发现的bug，此消息不会显示给用户)"""
-        formatted_message = _format_send_message(
-            event, message, at_sender, reply_message
-        )
-        await self.call_api("whisper", nick=event.nick, text=str(formatted_message))
+        event = current_event.get()
+        assert isinstance(event, MessageEvent)
+        await self.call_api("whisper", nick=event.nick, text=str(message))
 
     async def move(self, new_channel: str):
         """移动到指定房间"""
