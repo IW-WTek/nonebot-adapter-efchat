@@ -11,7 +11,6 @@ EFChat 适配器提供了多个事件类型，用于处理消息和通知：
 | `event.message` | 消息内容 |
 | `event.trip` | 加密身份标识 |
 | `event.nick` | 发送者的用户 ID |
-| `event.channel` | 聊天室名称 |
 
 ---
 
@@ -19,8 +18,7 @@ EFChat 适配器提供了多个事件类型，用于处理消息和通知：
 EFChat 适配器提供了以下方法，用于发送消息：
 
 ### **2.1 `send(event, message, at_sender=False, reply_message=False)`**
-根据消息类型，自动选择 `send_chat_message()` 或 `send_whisper_message()`。
-
+通用消息发送方法
 ```python
 await bot.send(event, message="你好！", at_sender=True, reply_message=False)
 ```
@@ -34,36 +32,31 @@ await bot.send(event, message="你好！", at_sender=True, reply_message=False)
 
 ---
 
-### **2.2 `send_chat_message(event, message, show=True, at_sender=False, reply_message=False)`**
+### **2.2 `send_chat_message(message)`**
 发送 **房间消息**：
 
 ```python
-await bot.send_chat_message(event, message="Hello!", show=True, at_sender=False, reply_message=False)
+await bot.send_chat_message(message="Hello!", show=True)
+# show参数不是必填的，默认为 False ， 即该消息不保存到历史记录中
 ```
 
 | 参数        | 类型 | 说明 |
 |------------|------|------|
-| `event`    | `ChannelMessageEvent` | 事件对象 |
 | `message`  | `str` 或 `MessageSegment` | 要发送的内容 |
-| `show`     | `bool` | 是否显示在聊天记录 (`True` 显示，`False` 隐藏) |
-| `at_sender` | `bool` | 是否 @ 发送者 |
-| `reply_message` | `bool` | 是否回复原消息 |
+| `show`     | `bool` | 是否保存在聊天记录 (`True` 保存， `False` 不保存) |
 
 ---
 
-### **2.3 `send_whisper_message(event, message, at_sender=False, reply_message=False)`**
+### **2.3 `send_whisper_message(message)`**
 发送 **私聊消息**：
 
 ```python
-await bot.send_whisper_message(event, message="Hello EFChat!", at_sender=False, reply_message=False)
+await bot.send_whisper_message(message="Hello EFChat!")
 ```
 
 | 参数        | 类型 | 说明 |
 |------------|------|------|
-| `event`    | `WhisperMessageEvent` | 事件对象 |
 | `message`  | `str` 或 `MessageSegment` | 要发送的内容 |
-| `at_sender` | `bool` | 是否 @ 发送者 |
-| `reply_message` | `bool` | 是否回复原消息 |
 
 ---
 
