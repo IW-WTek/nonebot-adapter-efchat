@@ -99,7 +99,6 @@ class MessageEvent(Event):
         """消息ID"""
         reply: None = None
         """不支持获取引用消息"""
-        
 
     @model_validator(mode="before")
     def handle_message(cls, values):
@@ -207,7 +206,6 @@ class NoticeEvent(Event):
 
     def get_event_name(self) -> str:
         return f"{self.event_type}.{self.type}"
-    
 
 
 class RequestEvent(Event):
@@ -276,8 +274,8 @@ class JoinRoomEvent(NoticeEvent):
     """加密身份标识"""
     userid: int
     """用户ID"""
-    utype: str
-    """用户组"""
+    utype: str = ""
+    """用户组(在个别情况下为空)"""
 
     def get_event_description(self) -> str:
         return sanitize(
@@ -306,7 +304,6 @@ class OnlineSetEvent(NoticeEvent):
     """在线用户列表"""
     users: list[OnlineUser]
     """用户详细信息列表"""
-
 
     def get_event_description(self) -> str:
         return f"当前房间内共有 {len(self.nicks)} 名用户在线"
