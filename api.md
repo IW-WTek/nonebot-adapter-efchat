@@ -45,6 +45,9 @@ await bot.send_chat_message(message="Hello!", show=True)
 | `message`  | `str` 或 `MessageSegment` | 要发送的内容 |
 | `show`     | `bool` | 是否保存在聊天记录 (`True` 保存， `False` 不保存) |
 
+#### 返回
+空
+
 ---
 
 ### **2.3 `send_whisper_message(message)`**
@@ -57,6 +60,9 @@ await bot.send_whisper_message(message="Hello EFChat!")
 | 参数        | 类型 | 说明 |
 |------------|------|------|
 | `message`  | `str` 或 `MessageSegment` | 要发送的内容 |
+
+#### 返回
+空
 
 ---
 
@@ -73,6 +79,9 @@ await bot.move("PrivateRoom")
 |------|------|------|
 | `new_channel` | `str` | 目标房间名称 |
 
+#### 返回
+空，bot会直接进入新的房间
+
 ---
 
 ### **3.2 `change_nick(new_nick)`**
@@ -86,7 +95,7 @@ await bot.change_nick("EFChatBot")
 | `new_nick` | `str` | 目标昵称 |
 
 #### 返回
-`ChangeNickEvent`事件，父事件为`NoticeEvent`
+空，随后服务器会下发`ChangeNickEvent`事件，父事件为`NoticeEvent`
 
 ---
 
@@ -101,7 +110,7 @@ await bot.get_chat_history(num=50)
 | `num` | `int` | 要获取的消息数量 |
 
 #### 返回
-`ListHistoryEvent`事件，父事件为`NoticeEvent`
+空，随后服务器会下发`ListHistoryEvent`事件，父事件为`NoticeEvent`
 
 ---
 
