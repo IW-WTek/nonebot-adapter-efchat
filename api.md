@@ -85,6 +85,9 @@ await bot.change_nick("EFChatBot")
 |------|------|------|
 | `new_nick` | `str` | 目标昵称 |
 
+#### 返回
+`ChangeNickEvent`事件，父事件为`NoticeEvent`
+
 ---
 
 ### **3.3 `get_chat_history(num)`**
@@ -96,6 +99,9 @@ await bot.get_chat_history(num=50)
 | 参数 | 类型 | 说明 |
 |------|------|------|
 | `num` | `int` | 要获取的消息数量 |
+
+#### 返回
+`ListHistoryEvent`事件，父事件为`NoticeEvent`
 
 ---
 
