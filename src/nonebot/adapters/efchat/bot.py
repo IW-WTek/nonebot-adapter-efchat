@@ -79,7 +79,7 @@ class Bot(BaseBot):
             await target_method(event, voice_segment=voice_segment)
         else:
             await target_method(
-                event, message=message, at_sender=at_sender, reply_message=reply_message
+                event, message=_format_send_message(message, at_sender, reply_message)
             )
 
     async def send_chat_message(
