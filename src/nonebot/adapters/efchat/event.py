@@ -260,19 +260,19 @@ class JoinRoomEvent(NoticeEvent):
     __cmd__: ClassVar[str] = "onlineAdd"
     city: str
     """地理位置"""
-    client: str
+    client: str = ""
     """客户端信息"""
     hash: str
     """账号hash"""
-    isbot: bool
+    isbot: bool = False
     """是否机器人"""
-    level: int
+    level: int = 0
     """等级"""
     nick: str
     """用户名"""
     trip: str
     """加密身份标识"""
-    userid: int
+    userid: int = 0
     """用户ID"""
     utype: str = ""
     """用户组(在个别情况下为空)"""
