@@ -29,3 +29,4 @@ Bot连续运营三周以上可以发邮件申请永久Token
 这里是恒五聊聊天室的条款，不是本项目的条款
 - https://irinu-live.melon.fish/ToU/WTek_UEP.html
 - https://irinu-live.melon.fish/ToU/WSU_NCPT2.html
+- [聊天室开发者协议](https://irinu-live.melon.fish/ToU/EFC_BDC.htm)
