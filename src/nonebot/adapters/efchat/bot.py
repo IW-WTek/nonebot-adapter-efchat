@@ -50,11 +50,11 @@ class Bot(BaseBot):
 
         voice_segment = None
 
-        def target_method(event: MessageEvent, **kwargs):
+        def target_method(event: MessageEvent, message: Message):
             if isinstance(event, ChannelMessageEvent):
-                return self.send_chat_message(**kwargs)
+                return self.send_chat_message(message)
             if isinstance(event, WhisperMessageEvent):
-                return self.send_whisper_message(**kwargs)
+                return self.send_whisper_message(event.nick, message)
             raise ValueError(f"Unsupported MessageEvent type: {type(event)}")
 
         if isinstance(message, Message):
@@ -76,10 +76,10 @@ class Bot(BaseBot):
             voice_segment = MessageSegment.voice(src_name=src_name)
 
         if voice_segment:
-            await target_method(event, voice_segment=voice_segment)
+            await target_method(event, voice_segment)
         else:
             await target_method(
-                event, message=_format_send_message(message, at_sender, reply_message)
+                event, _format_send_message(message, at_sender, reply_message)
             )
 
     async def send_chat_message(
@@ -97,12 +97,11 @@ class Bot(BaseBot):
 
     async def send_whisper_message(
         self,
+        target: str,
         message: Union[str, Message, MessageSegment],
     ):
-        """发送私聊消息(因为服务器上的某个尚未发现的bug，此消息不会显示给用户)"""
-        event = current_event.get()
-        assert isinstance(event, MessageEvent)
-        await self.call_api("whisper", nick=event.nick, text=str(message))
+        """发送私聊消息"""
+        await self.call_api("whisper", nick=target, text=str(message))
 
     async def move(self, new_channel: str):
         """移动到指定房间"""

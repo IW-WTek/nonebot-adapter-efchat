@@ -50,15 +50,16 @@ await bot.send_chat_message(message="Hello!", show=True)
 
 ---
 
-### **2.3 `send_whisper_message(message)`**
+### **2.3 `send_whisper_message(target, message)`**
 发送 **私聊消息**：
 
 ```python
-await bot.send_whisper_message(message="Hello EFChat!")
+await bot.send_whisper_message(target="105", message="Hello EFChat!")
 ```
 
 | 参数        | 类型 | 说明 |
 |------------|------|------|
+| `target`   | `str` | 目标用户昵称 |
 | `message`  | `str` 或 `MessageSegment` | 要发送的内容 |
 
 #### 返回
