@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot-adapter-efchat"
-version = "0.1.4"
+version = "0.1.5"
 description = "A NoneBot adapter for EFChat"
 authors = ["molanp <molanpp@outlook.com>"]
 license = "MIT"
@@ -21,8 +21,8 @@ keywords = ["bot", "efchat", "wtek"]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-nonebot2 = "^2.2.0"
-typing-extensions = "^4.0.0"
+nonebot2 = ">=2.2.0"
+typing-extensions = ">=4.0.0"
 pydantic = ">=1.10.0,<3.0.0,!=2.5.0,!=2.5.1"
 aiofiles = ">=23.0.0"
 
