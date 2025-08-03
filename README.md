@@ -61,7 +61,7 @@ EFCHAT_BOTS = '
 ]
 '
 ```
-* 配置项`token`是必填项
+* 配置项`token`是必填项;[获取TOKEN](get_token.md)
 * 如果Bot将会拥有管理员权限，请提供`password`字段以确保账号安全
 - `nick`是bot账号，同时也是在聊天室里显示的昵称
 - `channel`是Bot活跃的房间名称
