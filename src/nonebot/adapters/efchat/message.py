@@ -1,3 +1,5 @@
+import base64
+import imghdr
 from nonebot.adapters import (
     MessageSegment as BaseMessageSegment,
     Message as BaseMessage,
@@ -19,8 +21,30 @@ class MessageSegment(BaseMessageSegment["Message"]):
         return Text("text", {"text": text})
 
     @staticmethod
-    def image(url: str) -> "Image":
-        return Image("image", {"url": url})
+    def image(
+        url: Optional[str] = None,
+        raw: Optional[bytes] = None,
+        path: Optional[Union[str, Path]] = None,
+    ) -> "Image":
+        if url:
+            return Image("image", {"url": url})
+
+        if raw is not None:
+            image_type = imghdr.what(None, raw) or "png"
+            data_url = MessageSegment._create_data_url(raw, f"image/{image_type}")
+            return Image("image", {"url": data_url})
+
+        if path:
+            try:
+                with open(path, "rb") as f:
+                    raw = f.read()
+                image_type = imghdr.what(None, raw) or "png"
+                data_url = MessageSegment._create_data_url(raw, f"image/{image_type}")
+                return Image("image", {"url": data_url})
+            except (IOError, OSError) as e:
+                raise ValueError(f"无法读取文件 {path}: {str(e)}") from e
+
+        raise ValueError("Must provide at least one of url, raw, or path")
 
     @staticmethod
     def at(target: str) -> "At":
@@ -79,6 +103,10 @@ class MessageSegment(BaseMessageSegment["Message"]):
                 "requires_upload": True,
             },
         )
+
+    @staticmethod
+    def _create_data_url(data: bytes, mime_type: str = "image/png") -> str:
+        return f"data:{mime_type};base64,{base64.b64encode(data).decode('utf-8')}"
 
     def __add__(
         self, other: Union[str, "MessageSegment", Iterable["MessageSegment"]]
