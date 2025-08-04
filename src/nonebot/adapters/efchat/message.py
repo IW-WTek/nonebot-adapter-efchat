@@ -1,5 +1,5 @@
 import base64
-import imghdr
+import filetype
 from nonebot.adapters import (
     MessageSegment as BaseMessageSegment,
     Message as BaseMessage,
@@ -30,7 +30,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
             return Image("image", {"url": url})
 
         if raw is not None:
-            image_type = imghdr.what(None, raw) or "png"
+            image_type = filetype.guess_extension(raw) or "png"
             data_url = MessageSegment._create_data_url(raw, f"image/{image_type}")
             return Image("image", {"url": data_url})
 
@@ -38,7 +38,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
             try:
                 with open(path, "rb") as f:
                     raw = f.read()
-                image_type = imghdr.what(None, raw) or "png"
+                image_type = filetype.guess_extension(raw) or "png"
                 data_url = MessageSegment._create_data_url(raw, f"image/{image_type}")
                 return Image("image", {"url": data_url})
             except (IOError, OSError) as e:
