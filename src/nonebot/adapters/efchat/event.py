@@ -18,8 +18,8 @@ class Event(BaseEvent):
     event_type: str
     time: int
     """时间"""
-    if TYPE_CHECKING:
-        to_me: bool
+    to_me: bool = False
+    """是否被提及"""
 
     if PYDANTIC_V2:
 
@@ -89,7 +89,6 @@ class MessageEvent(Event):
     """发送者昵称"""
     trip: str = ""
     """加密身份标识"""
-    to_me: bool = False
     message_type: ClassVar[Literal["channel", "whisper", "html"]]
 
     if TYPE_CHECKING:
