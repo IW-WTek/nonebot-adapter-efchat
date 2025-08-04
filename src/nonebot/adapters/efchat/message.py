@@ -30,16 +30,16 @@ class MessageSegment(BaseMessageSegment["Message"]):
             return Image("image", {"url": url})
 
         if raw is not None:
-            image_type = filetype.guess_extension(raw) or "png"
-            data_url = MessageSegment._create_data_url(raw, f"image/{image_type}")
+            mime_type = filetype.guess_mime(raw) or "image/png"
+            data_url = MessageSegment._create_data_url(raw, mime_type)
             return Image("image", {"url": data_url})
 
         if path:
             try:
                 with open(path, "rb") as f:
                     raw = f.read()
-                image_type = filetype.guess_extension(raw) or "png"
-                data_url = MessageSegment._create_data_url(raw, f"image/{image_type}")
+                mime_type = filetype.guess_mime(raw) or "image/png"
+                data_url = MessageSegment._create_data_url(raw, mime_type)
                 return Image("image", {"url": data_url})
             except (IOError, OSError) as e:
                 raise ValueError(f"无法读取文件 {path}: {str(e)}") from e
