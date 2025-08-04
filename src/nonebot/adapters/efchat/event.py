@@ -116,9 +116,6 @@ class MessageEvent(Event):
     def get_user_id(self) -> str:
         return self.nick
 
-    def is_tome(self) -> bool:
-        return self.to_me
-
     def convert(self, data: dict) -> "MessageEvent":
         if data.get("type") == "whisper" and data.get("from") is not None:
             cls = WhisperMessageEvent
