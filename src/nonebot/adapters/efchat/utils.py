@@ -58,7 +58,7 @@ async def upload_voice(
             "Referer": "https://efchat.melon.fish/",
         },
         files={
-            "voice.mp3": file_data,
+            "upfile": file_data,
         },
     )
     try:
