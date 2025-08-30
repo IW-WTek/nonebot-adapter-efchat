@@ -8,6 +8,17 @@ from .message import Message
 from .utils import sanitize
 from .models import ChatHistory, OnlineUser
 
+LEVEL_MAP = {
+    55105: "admin",  # 站长
+    25555: "moderator",  # 管理员
+    10555: "channelOwner",  # 房主（非公屏可踢人）
+    15555: "channelModerator",  # 房间管理员（暂时没用）
+    82200: "Yana",  # 服务器机娘
+    5155: "channelTrusted",  # 房间信任（锁房用的没用）
+    1055: "trustedUser",  # 信任用户（可以跳过房间锁定和验证码）
+    105: "default",  # 默认用户
+}
+
 
 class Event(BaseEvent):
     """通用事件"""
@@ -136,6 +147,15 @@ class ChannelMessageEvent(MessageEvent):
     """房间名称"""
     mod: bool = False
     """是否受信用户"""
+    role: str
+    """用户角色"""
+
+    @model_validator(mode="before")
+    def handle_message(cls, values):
+        if isinstance(values, dict):
+            level = values["level"]
+            values["role"] = LEVEL_MAP[level]
+        return values
 
     def get_event_description(self) -> str:
         return sanitize(

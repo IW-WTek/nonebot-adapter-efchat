@@ -72,7 +72,7 @@ class Adapter(BaseAdapter):
 
     async def _forward_ws(self, cfg: EFChatBotConfig):
         """WebSocket 连接维护"""
-        url = "wss://efchat.melon.fish/ws"
+        url = "wss://efchat.irin-wakako.uk/ws"
         pwd = cfg.password
         token = cfg.token
         request = Request(method="GET", url=url)
