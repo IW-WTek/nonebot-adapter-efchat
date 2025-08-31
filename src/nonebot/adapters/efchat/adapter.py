@@ -152,7 +152,7 @@ class Adapter(BaseAdapter):
         """处理验证码事件"""
         logger.warning("触发验证码验证，请输入验证码后继续")
         match = re.findall(r"!\[]\((.*?)\)", data["text"])
-        captcha_url = f"https://efchat.melon.fish/{match[0]}" if match else data["text"]
+        captcha_url = f"https://efchat.irin-wakako.uk/{match[0]}" if match else data["text"]
         logger.info(f"验证码地址: {captcha_url}")
 
         captcha = await asyncio.get_event_loop().run_in_executor(

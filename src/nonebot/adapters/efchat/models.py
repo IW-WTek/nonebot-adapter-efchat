@@ -57,7 +57,7 @@ class EFChatBotConfig(BaseModel):
     """账号密码"""
     channel: str = "PublicR"
     """活跃房间"""
-    head: str = "https://efchat.melon.fish/imgs/ava.png"
+    head: str = "https://efchat.irin-wakako.uk/imgs/ava.png"
     """头像链接"""
     token: Optional[str] = None
     """认证Token"""

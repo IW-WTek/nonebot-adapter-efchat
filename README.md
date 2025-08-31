@@ -12,7 +12,7 @@ _✨ NoneBot2 EFChat 协议适配 / EFChat Protocol Adapter for NoneBot2 ✨_
 
 ## EFChat适配器简述
 
-EFChat Adapter 是一个适用于 **[EFChat聊天室](https://efchat.melon.fish)** 的 **NoneBot 适配器**，可以轻松地在 EFChat 聊天室中开发机器人，并使用 NoneBot 生态来构建聊天机器人。
+EFChat Adapter 是一个适用于 **[EFChat聊天室](https://efchat.irin-wakako.uk)** 的 **NoneBot 适配器**，可以轻松地在 EFChat 聊天室中开发机器人，并使用 NoneBot 生态来构建聊天机器人。
 
 > [!IMPORTANT]
 >
@@ -54,7 +54,7 @@ EFCHAT_BOTS = '
         "nick": "EFChatBot",
         "password": "", // 可选配置
         "channel": "PublicR",
-        "head": "https://efchat.melon.fish/imgs/ava.png", // 可选，为空使用默认头像
+        "head": "https://efchat.irin-wakako.uk/imgs/ava.png", // 可选，为空使用默认头像
         "token": "",
         "ignore_self": true // 默认忽略自身消息
     }
