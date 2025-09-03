@@ -55,7 +55,7 @@ class EFChatBotConfig(BaseModel):
     """账号昵称"""
     password: Optional[str] = None
     """账号密码"""
-    channel: str = "PublicR"
+    channel: str = "NewPR"
     """活跃房间"""
     head: str = "https://efchat.irin-wakako.uk/imgs/ava.png"
     """头像链接"""

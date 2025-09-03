@@ -53,7 +53,7 @@ EFCHAT_BOTS = '
     {
         "nick": "EFChatBot",
         "password": "", // 可选配置
-        "channel": "PublicR",
+        "channel": "NewPR",
         "head": "https://efchat.irin-wakako.uk/imgs/ava.png", // 可选，为空使用默认头像
         "token": "",
         "ignore_self": true // 默认忽略自身消息
